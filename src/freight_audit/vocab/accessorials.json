@@ -1,0 +1,15 @@
+{
+  "fuzz_threshold": 86,
+  "categories": {
+    "linehaul":    ["linehaul", "line haul", "freight charge", "base rate", "transportation", "flat rate"],
+    "fuel":        ["fuel", "fsc", "fuel surcharge"],
+    "detention":   ["detention", "det ", "det.", "driver wait", "wait time", "waiting", "demurrage"],
+    "layover":     ["layover", "lay over", "overnight"],
+    "lumper":      ["lumper", "unloading", "loading fee", "load/unload", "handling"],
+    "liftgate":    ["liftgate", "lift gate", "lift-gate"],
+    "reweigh":     ["reweigh", "re-weigh", "reweighing", "scale"],
+    "tonu":        ["tonu", "truck order not used", "dry run", "dead head", "deadhead"],
+    "stopoff":     ["stop off", "stop-off", "extra stop", "multi-stop", "additional stop"],
+    "residential": ["residential", "resi "]
+  }
+}

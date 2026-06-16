@@ -1,0 +1,19 @@
+{
+  "name": "Acme Brokerage",
+  "tolerance": 1.00,
+  "default_detention_rate": 80.00,
+  "free_time_hours": 2.0,
+  "max_detention_hours": 6.0,
+  "fuel_rule": {
+    "kind": "pct_of_linehaul",
+    "pct": 0.25,
+    "tolerance": 5.00
+  },
+  "global_accessorial_caps": {
+    "lumper": 150.00,
+    "liftgate": 75.00
+  },
+  "disallowed_accessorials": ["tonu"],
+  "vocab_overlay_path": "engine/vocab/client_acme.example.json",
+  "_comment": "Onboarding Acme = this file. Fuel must be ~25% of linehaul (±$5); lumper capped $150; liftgate capped $75; TONU not allowed; detention $80/hr, 6h max."
+}

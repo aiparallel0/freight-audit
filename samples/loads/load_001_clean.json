@@ -1,0 +1,37 @@
+{
+  "load_id": "L-100481",
+  "scenario": "Clean match -- invoice equals rate con, POD present, short wait. Auto-approves.",
+  "rate_confirmation": {
+    "load_id": "L-100481",
+    "broker_name": "Cardinal Logistics Brokerage",
+    "carrier_name": "Sunbelt Carriers LLC",
+    "origin": "Dallas, TX",
+    "destination": "Memphis, TN",
+    "agreed_total": "$1,850.00",
+    "pickup_date": "2026-06-08",
+    "free_time_hours": 2.0,
+    "line_items": [
+      {"description": "Linehaul", "amount": "$1,600.00"},
+      {"description": "Fuel Surcharge", "amount": "$250.00"}
+    ],
+    "approved_accessorials": {"detention": "$75.00"}
+  },
+  "invoice": {
+    "invoice_number": "SB-44021",
+    "load_id": "L-100481",
+    "carrier_name": "Sunbelt Carriers LLC",
+    "billed_total": "$1,850.00",
+    "invoice_date": "2026-06-10",
+    "line_items": [
+      {"description": "Line Haul", "amount": "$1,600.00"},
+      {"description": "FSC", "amount": "$250.00"}
+    ]
+  },
+  "pod": {
+    "load_id": "L-100481",
+    "delivered": true,
+    "arrival_time": "2026-06-09 08:00",
+    "departure_time": "2026-06-09 09:30",
+    "signed_by": "R. Alvarez"
+  }
+}

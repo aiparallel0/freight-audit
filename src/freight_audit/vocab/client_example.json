@@ -1,0 +1,10 @@
+{
+  "_comment": "EXAMPLE per-client overlay. Onboarding a client = adding their carriers' real spellings here. No code change. Load with Vocabulary.load(client_overlay='.../client_acme.json').",
+  "categories": {
+    "detention":   ["det fee", "detentn", "driver delay", "dwell", "sitting time"],
+    "lumper":      ["lmpr", "unload chrg", "dock fee"],
+    "fuel":        ["f/s", "fuel adj", "diesel surcharge"],
+    "stopoff":     ["drop fee", "addl stop"],
+    "reconsignment": ["reconsign", "redelivery", "re-delivery"]
+  }
+}

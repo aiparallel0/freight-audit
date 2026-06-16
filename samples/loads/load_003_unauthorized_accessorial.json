@@ -1,0 +1,38 @@
+{
+  "load_id": "L-100483",
+  "scenario": "Unauthorized accessorial: carrier adds a liftgate fee never agreed on the rate con.",
+  "rate_confirmation": {
+    "load_id": "L-100483",
+    "broker_name": "Cardinal Logistics Brokerage",
+    "carrier_name": "Blue Ridge Transport",
+    "origin": "Charlotte, NC",
+    "destination": "Nashville, TN",
+    "agreed_total": "$1,400.00",
+    "pickup_date": "2026-06-10",
+    "free_time_hours": 2.0,
+    "line_items": [
+      {"description": "Linehaul", "amount": "$1,150.00"},
+      {"description": "Fuel Surcharge", "amount": "$250.00"}
+    ],
+    "approved_accessorials": {"detention": "$60.00"}
+  },
+  "invoice": {
+    "invoice_number": "BR-3390",
+    "load_id": "L-100483",
+    "carrier_name": "Blue Ridge Transport",
+    "billed_total": "$1,525.00",
+    "invoice_date": "2026-06-12",
+    "line_items": [
+      {"description": "Linehaul", "amount": "$1,150.00"},
+      {"description": "Fuel Surcharge", "amount": "$250.00"},
+      {"description": "Liftgate Service", "amount": "$125.00"}
+    ]
+  },
+  "pod": {
+    "load_id": "L-100483",
+    "delivered": true,
+    "arrival_time": "2026-06-11 10:00",
+    "departure_time": "2026-06-11 11:30",
+    "signed_by": "M. Carter"
+  }
+}

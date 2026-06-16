@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "freight-audit"
+version = "0.1.0"
+description = "Audit freight carrier invoices against rate confirmations and proofs of delivery — catch overcharges, unauthorized accessorials, and uncollected detention."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+keywords = ["freight", "logistics", "invoice-audit", "trucking", "document-automation", "ocr", "accessorial"]
+authors = [{ name = "freight-audit contributors" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Office/Business :: Financial",
+]
+dependencies = [
+    "rapidfuzz>=3.0",
+]
+
+[project.optional-dependencies]
+# OCR pipeline (also requires the system `tesseract` binary, v5+)
+ocr = [
+    "pytesseract>=0.3.10",
+    "opencv-python-headless>=4.8",
+    "pillow>=9.0",
+    "numpy>=1.23",
+]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.scripts]
+freight-audit = "freight_audit.cli:main"
+freight-audit-ocr = "freight_audit.ocr.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/your-org/freight-audit"
+Issues = "https://github.com/your-org/freight-audit/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/freight_audit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

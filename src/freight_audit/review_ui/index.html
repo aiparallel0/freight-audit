@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>freight-audit — Review Console</title>
+<style>
+  /* ---- design tokens -------------------------------------------------
+     Subject: a freight back-office audit queue. Vernacular borrowed from
+     dispatch sheets and weigh tickets: monospaced load IDs and money,
+     a status-rail down the left of every row, ink-on-manila surfaces.
+     Palette: manila/ink with a freight-amber signal and a recovery-teal. */
+  :root {
+    --ink:        #1c1a17;
+    --ink-soft:   #4a463f;
+    --manila:     #f3ece0;
+    --paper:      #fbf7f0;
+    --line:       #d9cfbe;
+    --amber:      #c6781e;   /* needs review / overpay */
+    --amber-bg:   #f7e9d4;
+    --teal:       #0f7368;   /* recoverable revenue */
+    --teal-bg:    #d8ece8;
+    --red:        #a02c25;   /* block */
+    --red-bg:     #f3dcd8;
+    --green:      #3f6f3a;   /* clean */
+    --green-bg:   #dde7d6;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--manila);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    line-height: 1.45;
+  }
+  .mono { font-family: "SFMono-Regular", "JetBrains Mono", "Consolas", ui-monospace, monospace; }
+
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding: 22px 28px 18px;
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 22px;
+    background: var(--paper);
+  }
+  header h1 {
+    font-size: 20px; margin: 0; letter-spacing: .14em; text-transform: uppercase;
+    font-weight: 700;
+  }
+  header .sub { color: var(--ink-soft); font-size: 13.5px; }
+  header .stamp {
+    margin-left: auto; font-size: 11.5px; letter-spacing: .18em; text-transform: uppercase;
+    border: 1.5px solid var(--ink); padding: 4px 10px; transform: rotate(-1.5deg);
+    color: var(--ink-soft);
+  }
+
+  .totals {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px; background: var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .totals .cell { background: var(--paper); padding: 14px 20px; }
+  .totals .k { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+  .totals .v { font-size: 22px; font-weight: 700; margin-top: 3px; }
+  .totals .v.amber { color: var(--amber); }
+  .totals .v.teal  { color: var(--teal); }
+
+  main { padding: 22px 28px 80px; max-width: 1040px; margin: 0 auto; }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .filters button {
+    font: inherit; font-size: 13px; cursor: pointer;
+    background: var(--paper); border: 1px solid var(--line); color: var(--ink-soft);
+    padding: 6px 13px; border-radius: 2px; letter-spacing: .02em;
+  }
+  .filters button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .load {
+    background: var(--paper); border: 1px solid var(--line);
+    border-left: 6px solid var(--line);
+    margin-bottom: 12px; border-radius: 2px;
+    display: grid; grid-template-columns: 1fr auto; gap: 0;
+  }
+  .load[data-sev="ok"]    { border-left-color: var(--green); }
+  .load[data-sev="info"]  { border-left-color: var(--ink-soft); }
+  .load[data-sev="warn"]  { border-left-color: var(--amber); }
+  .load[data-sev="block"] { border-left-color: var(--red); }
+
+  .load .body { padding: 15px 18px; min-width: 0; }
+  .load .top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+  .load .id { font-size: 16px; font-weight: 700; letter-spacing: .03em; }
+  .badge {
+    font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 2px; font-weight: 700; font-family: inherit;
+  }
+  .badge.ok    { background: var(--green-bg); color: var(--green); }
+  .badge.info  { background: #e7e1d6; color: var(--ink-soft); }
+  .badge.warn  { background: var(--amber-bg); color: var(--amber); }
+  .badge.block { background: var(--red-bg); color: var(--red); }
+
+  .impact { margin-left: auto; font-size: 15px; font-weight: 700; }
+  .impact.over { color: var(--amber); }
+  .impact.recover { color: var(--teal); }
+  .impact.flat { color: var(--ink-soft); }
+
+  ul.findings { list-style: none; margin: 11px 0 0; padding: 0; }
+  ul.findings li {
+    font-size: 13.5px; color: var(--ink-soft);
+    padding: 6px 0 6px 16px; position: relative; border-top: 1px dotted var(--line);
+  }
+  ul.findings li:before {
+    content: ""; position: absolute; left: 0; top: 13px;
+    width: 6px; height: 6px; border-radius: 50%;
+  }
+  ul.findings li[data-s="block"]:before { background: var(--red); }
+  ul.findings li[data-s="warn"]:before  { background: var(--amber); }
+  ul.findings li[data-s="ok"]:before,
+  ul.findings li[data-s="info"]:before   { background: var(--ink-soft); }
+  ul.findings li .m { color: var(--ink); }
+  ul.findings li .amt { font-weight: 700; }
+  ul.findings li .amt.over { color: var(--amber); }
+  ul.findings li .amt.recover { color: var(--teal); }
+
+  .actions {
+    border-left: 1px solid var(--line);
+    display: flex; flex-direction: column; justify-content: center; gap: 8px;
+    padding: 15px 16px; background: var(--manila);
+  }
+  .actions button {
+    font: inherit; font-size: 12.5px; cursor: pointer; white-space: nowrap;
+    border: 1px solid var(--ink); border-radius: 2px; padding: 7px 14px;
+    background: var(--paper); color: var(--ink); letter-spacing: .03em;
+  }
+  .actions button.approve:hover { background: var(--green); color: #fff; border-color: var(--green); }
+  .actions button.dispute:hover { background: var(--amber); color: #fff; border-color: var(--amber); }
+  .load.decided { opacity: .58; }
+  .load .decision {
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    margin-top: 6px; font-weight: 700;
+  }
+  .load.approved .decision { color: var(--green); }
+  .load.disputed .decision { color: var(--amber); }
+
+  footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--ink); color: var(--paper);
+    padding: 11px 28px; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center;
+    font-size: 13px;
+  }
+  footer .grow { flex: 1; }
+  footer button {
+    font: inherit; font-size: 12.5px; cursor: pointer;
+    background: var(--paper); color: var(--ink); border: none; border-radius: 2px;
+    padding: 7px 15px; letter-spacing: .04em; font-weight: 700;
+  }
+  .empty { padding: 50px 20px; text-align: center; color: var(--ink-soft); }
+  .loaderr {
+    background: var(--red-bg); border: 1px solid var(--red); color: var(--red);
+    padding: 14px 18px; border-radius: 2px; font-size: 14px; margin-bottom: 16px;
+  }
+  @media (max-width: 620px) {
+    .load { grid-template-columns: 1fr; }
+    .actions { border-left: none; border-top: 1px solid var(--line); flex-direction: row; }
+    .impact { width: 100%; margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>freight-audit</h1>
+  <span class="sub">Invoice · Rate Con · POD — review queue</span>
+  <span class="stamp" id="stamp">unaudited</span>
+</header>
+
+<section class="totals" id="totals"></section>
+
+<main>
+  <div id="loaderr" class="loaderr" style="display:none"></div>
+  <div class="filters" id="filters">
+    <button data-f="all" aria-pressed="true">All</button>
+    <button data-f="block">Blocking</button>
+    <button data-f="warn">Needs review</button>
+    <button data-f="ok">Auto-approve</button>
+    <button data-f="undecided">Undecided</button>
+  </div>
+  <div id="queue"></div>
+  <div id="empty" class="empty" style="display:none">Nothing in this view.</div>
+</main>
+
+<footer>
+  <span id="progress">0 decided</span>
+  <span class="grow"></span>
+  <button id="export">Export decisions (CSV)</button>
+</footer>
+
+<script>
+/* The console loads findings.json (produced by `python run.py --json`). It never
+   talks to an OCR API itself — it just renders what the engine decided and
+   records the reviewer's call. Decisions stay in memory (no server needed for
+   the demo); Export hands back a CSV to push into their TMS/accounting. */
+const fmt = c => (c < 0 ? "-" : "") + "$" + Math.abs(Math.trunc(c/100)).toLocaleString()
+                  + "." + String(Math.abs(c)%100).padStart(2,"0");
+const SEV_LABEL = { ok:"clean", info:"info", warn:"review", block:"hold" };
+const decisions = {};   // load_id -> "approved" | "disputed"
+let DATA = [], filter = "all";
+
+async function load() {
+  try {
+    const res = await fetch("findings.json");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    DATA = await res.json();
+  } catch (e) {
+    document.getElementById("loaderr").style.display = "block";
+    document.getElementById("loaderr").textContent =
+      "Could not load findings.json (" + e.message + "). Generate it with: "
+      + "python run.py --json review_ui/findings.json — then serve this folder "
+      + "(python -m http.server) and reload.";
+    return;
+  }
+  renderTotals(); renderQueue(); renderProgress();
+  document.getElementById("stamp").textContent = DATA.length + " loads";
+}
+
+function overpay(f){ return f.findings.reduce((s,x)=> s + (x.money_impact_cents>0?x.money_impact_cents:0),0); }
+function recover(f){ return -f.findings.reduce((s,x)=> s + (x.money_impact_cents<0?x.money_impact_cents:0),0); }
+
+function renderTotals() {
+  const tot = DATA.reduce((a,f)=>{ a.over+=overpay(f); a.rec+=recover(f);
+    if(f.auto_approvable)a.clean++; if(f.severity==="block")a.block++; return a; },
+    {over:0,rec:0,clean:0,block:0});
+  document.getElementById("totals").innerHTML = `
+    <div class="cell"><div class="k">Loads</div><div class="v">${DATA.length}</div></div>
+    <div class="cell"><div class="k">Auto-approve</div><div class="v">${tot.clean}</div></div>
+    <div class="cell"><div class="k">Blocking</div><div class="v">${tot.block}</div></div>
+    <div class="cell"><div class="k">Overpayment caught</div><div class="v amber">${fmt(tot.over)}</div></div>
+    <div class="cell"><div class="k">Recoverable revenue</div><div class="v teal">${fmt(tot.rec)}</div></div>`;
+}
+
+function show(f) {
+  if (filter === "all") return true;
+  if (filter === "undecided") return !decisions[f.load_id];
+  return f.severity === filter;
+}
+
+function renderQueue() {
+  const q = document.getElementById("queue");
+  const list = DATA.filter(show);
+  document.getElementById("empty").style.display = list.length ? "none" : "block";
+  q.innerHTML = list.map(f => {
+    const ov = overpay(f), rc = recover(f);
+    const impactCls = rc>0 ? "recover" : ov>0 ? "over" : "flat";
+    const impactTxt = rc>0 ? "recover " + fmt(rc) : ov>0 ? "overpay " + fmt(ov) : "balanced";
+    const decided = decisions[f.load_id];
+    const findings = f.findings.map(x => {
+      let amt = "";
+      if (x.money_impact_cents) {
+        const cls = x.money_impact_cents < 0 ? "recover" : "over";
+        amt = ` <span class="amt ${cls}">[${fmt(x.money_impact_cents)}]</span>`;
+      }
+      return `<li data-s="${x.severity}"><span class="m">${x.message}</span>${amt}</li>`;
+    }).join("");
+    return `
+      <div class="load ${decided?('decided '+decided):''}" data-sev="${f.severity}" data-id="${f.load_id}">
+        <div class="body">
+          <div class="top">
+            <span class="id mono">${f.load_id}</span>
+            <span class="badge ${f.severity}">${SEV_LABEL[f.severity]||f.severity}</span>
+            <span class="impact ${impactCls} mono">${impactTxt}</span>
+          </div>
+          <ul class="findings">${findings}</ul>
+          ${decided?`<div class="decision">${decided==="approved"?"✓ approved for payment":"✕ flagged / disputed"}</div>`:""}
+        </div>
+        <div class="actions">
+          <button class="approve" data-act="approved" data-id="${f.load_id}">Approve</button>
+          <button class="dispute" data-act="disputed" data-id="${f.load_id}">Flag / dispute</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function renderProgress() {
+  const n = Object.keys(decisions).length;
+  document.getElementById("progress").textContent =
+    `${n} of ${DATA.length} decided`;
+  document.getElementById("stamp").textContent =
+    n === DATA.length && DATA.length ? "audit complete" : DATA.length + " loads";
+}
+
+document.addEventListener("click", e => {
+  const act = e.target.closest("[data-act]");
+  if (act) { decisions[act.dataset.id] = act.dataset.act; renderQueue(); renderProgress(); return; }
+  const fb = e.target.closest("#filters [data-f]");
+  if (fb) {
+    filter = fb.dataset.f;
+    document.querySelectorAll("#filters button").forEach(b =>
+      b.setAttribute("aria-pressed", b === fb ? "true" : "false"));
+    renderQueue();
+  }
+});
+
+document.getElementById("export").addEventListener("click", () => {
+  const rows = [["load_id","severity","overpayment","recoverable","decision"]];
+  DATA.forEach(f => rows.push([
+    f.load_id, f.severity, fmt(overpay(f)), fmt(recover(f)),
+    decisions[f.load_id] || "undecided"
+  ]));
+  const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"}));
+  a.download = "freight-audit-decisions.csv";
+  a.click();
+});
+
+load();
+</script>
+</body>
+</html>

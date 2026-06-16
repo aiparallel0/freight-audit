@@ -1,0 +1,38 @@
+{
+  "load_id": "L-100484",
+  "scenario": "Detention BILLED but POD has no arrival/departure timestamps -- deniable as-is. BLOCK for review.",
+  "rate_confirmation": {
+    "load_id": "L-100484",
+    "broker_name": "Cardinal Logistics Brokerage",
+    "carrier_name": "Sunbelt Carriers LLC",
+    "origin": "Houston, TX",
+    "destination": "New Orleans, LA",
+    "agreed_total": "$1,250.00",
+    "pickup_date": "2026-06-11",
+    "free_time_hours": 2.0,
+    "line_items": [
+      {"description": "Linehaul", "amount": "$1,050.00"},
+      {"description": "Fuel Surcharge", "amount": "$200.00"}
+    ],
+    "approved_accessorials": {"detention": "$75.00"}
+  },
+  "invoice": {
+    "invoice_number": "SB-44090",
+    "load_id": "L-100484",
+    "carrier_name": "Sunbelt Carriers LLC",
+    "billed_total": "$1,475.00",
+    "invoice_date": "2026-06-13",
+    "line_items": [
+      {"description": "Linehaul", "amount": "$1,050.00"},
+      {"description": "Fuel Surcharge", "amount": "$200.00"},
+      {"description": "Detention (3 hrs)", "amount": "$225.00", "quantity": 3, "rate": "$75.00"}
+    ]
+  },
+  "pod": {
+    "load_id": "L-100484",
+    "delivered": true,
+    "arrival_time": null,
+    "departure_time": null,
+    "signed_by": "J. Pierre"
+  }
+}

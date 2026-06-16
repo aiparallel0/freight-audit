@@ -1,0 +1,38 @@
+{
+  "load_id": "L-100482",
+  "scenario": "Broker OVERPAYS: linehaul billed above agreed AND fuel charged twice (duplicate).",
+  "rate_confirmation": {
+    "load_id": "L-100482",
+    "broker_name": "Cardinal Logistics Brokerage",
+    "carrier_name": "Ironwood Freight Inc",
+    "origin": "Atlanta, GA",
+    "destination": "Tampa, FL",
+    "agreed_total": "$2,100.00",
+    "pickup_date": "2026-06-09",
+    "free_time_hours": 2.0,
+    "line_items": [
+      {"description": "Linehaul", "amount": "$1,800.00"},
+      {"description": "Fuel Surcharge", "amount": "$300.00"}
+    ],
+    "approved_accessorials": {}
+  },
+  "invoice": {
+    "invoice_number": "IW-7781",
+    "load_id": "100482",
+    "carrier_name": "Ironwood Freight Inc",
+    "billed_total": "$2,500.00",
+    "invoice_date": "2026-06-11",
+    "line_items": [
+      {"description": "Linehaul", "amount": "$1,900.00"},
+      {"description": "Fuel Surcharge", "amount": "$300.00"},
+      {"description": "Fuel Surcharge", "amount": "$300.00"}
+    ]
+  },
+  "pod": {
+    "load_id": "L-100482",
+    "delivered": true,
+    "arrival_time": "2026-06-10 13:00",
+    "departure_time": "2026-06-10 14:15",
+    "signed_by": "T. Nguyen"
+  }
+}
