@@ -30,6 +30,11 @@ ocr = [
     "pillow>=9.0",
     "numpy>=1.23",
 ]
+# Real cloud-OCR provider: AWS Textract (AnalyzeExpense + AnalyzeDocument QUERIES).
+# Credentials come from the standard AWS environment, never from source.
+textract = [
+    "boto3>=1.26",
+]
 dev = [
     "pytest>=7.0",
 ]
