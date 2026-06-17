@@ -27,6 +27,7 @@ from . import (
 )
 from .profiles import apply_profile_rules
 from .models import FindingType
+from .reporting import report_from_results, format_report
 
 C = {"ok": "\033[92m", "info": "\033[96m", "warn": "\033[93m",
      "block": "\033[91m", "end": "\033[0m"}
@@ -66,6 +67,8 @@ def main(argv=None):
     ap.add_argument("--export-out", help="path for --export output (default auto-named)")
     ap.add_argument("--csv", help="write a flat CSV summary to this path")
     ap.add_argument("--json", help="write structured JSON to this path")
+    ap.add_argument("--report", action="store_true",
+                    help="print a savings/ROI report for this run")
     ap.add_argument("--no-color", action="store_true")
     args = ap.parse_args(argv)
 
@@ -132,6 +135,9 @@ def main(argv=None):
     print(f"  recoverable revenue : {cents_to_str(total_rec)}")
     print(f"  TOTAL $ TOUCHED     : {cents_to_str(total_over + total_rec)}")
     print("=" * 78)
+
+    if args.report:
+        print("\n" + format_report(report_from_results(results)))
 
     if args.csv and rows:
         with open(args.csv, "w", newline="") as fh:

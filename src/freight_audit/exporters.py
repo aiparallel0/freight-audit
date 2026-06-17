@@ -115,17 +115,27 @@ def tms_json(results: list[MatchResult]) -> str:
 
 
 # ---------------------------------------------------------------------------
+def roi_report(results: list[MatchResult]) -> str:
+    """Human-readable savings/ROI report for a batch (the 'what did we save you'
+    view). Aggregation logic lives in reporting.py so it's shared with the durable
+    history report (store.report())."""
+    from .reporting import report_from_results, format_report
+    return format_report(report_from_results(results))
+
+
+# ---------------------------------------------------------------------------
 EXPORTERS: dict[str, Callable[[list[MatchResult]], str]] = {
     "csv": csv_export,
     "exceptions_csv": exceptions_csv,
     "quickbooks_iif": quickbooks_iif,
     "tms_json": tms_json,
+    "roi_report": roi_report,
 }
 
 # file extension per exporter (for the CLI to name files sensibly)
 EXPORTER_EXT = {
     "csv": ".csv", "exceptions_csv": ".csv",
-    "quickbooks_iif": ".iif", "tms_json": ".json",
+    "quickbooks_iif": ".iif", "tms_json": ".json", "roi_report": ".txt",
 }
 
 

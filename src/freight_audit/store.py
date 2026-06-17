@@ -149,5 +149,10 @@ class Store:
             "audit_events": len(self.audit_trail()),
         }
 
+    def report(self) -> dict:
+        """Aggregate savings/ROI report over every persisted load (see reporting.py)."""
+        from .reporting import report_from_store      # lazy import avoids a cycle
+        return report_from_store(self)
+
     def close(self):
         self.conn.close()
