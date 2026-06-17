@@ -95,6 +95,9 @@ class RateConfirmation:
     pickup_date: Optional[datetime] = None
     free_time_hours: float = 2.0          # standard free window before detention applies
     raw_source: str = ""                  # path / id of the source doc
+    # if set, the rate con prices detention as a flat fee (integer cents) rather than
+    # per-hour; the engine values an underbilled detention claim as this flat amount.
+    detention_flat_fee_cents: Optional[int] = None
 
     @property
     def line_total_cents(self) -> int:
@@ -154,6 +157,8 @@ class FindingType(str, Enum):
     MISSING_DOC = "missing_doc"
     LOAD_ID_MISMATCH = "load_id_mismatch"             # docs reference different loads
     BAD_POD_DATA = "bad_pod_data"                     # timestamps inverted / implausible
+    MULTIPLE_DETENTION_LINES = "multiple_detention_lines"  # >1 detention line -> verify double-bill
+    ZERO_AMOUNT_ACCESSORIAL = "zero_amount_accessorial"    # accessorial line with $0/blank amount
     OK = "ok"
 
 

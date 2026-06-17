@@ -94,6 +94,8 @@ class JsonFixtureProvider(ExtractionProvider):
             approved_accessorials=approved,
             pickup_date=_parse_dt(d.get("pickup_date")),
             free_time_hours=float(d.get("free_time_hours", 2.0)),
+            detention_flat_fee_cents=(to_cents(d["detention_flat_fee"])
+                                      if d.get("detention_flat_fee") is not None else None),
             raw_source=str(source if not isinstance(source, dict) else "inline"),
         )
 

@@ -139,17 +139,31 @@ class MatchEngine:
                         money_impact_cents=over))
 
     def _check_unauthorized_accessorials(self, rc: RateConfirmation, inv: CarrierInvoice, res: MatchResult):
-        """Accessorial on the invoice that is neither on the rate con nor pre-approved."""
+        """Accessorial on the invoice that is neither on the rate con nor pre-approved.
+        A zero/blank-amount accessorial is not an overcharge -- don't cry wolf on it;
+        note it once as INFO so it's transparent, not silently dropped."""
         rc_categories = {li.category for li in rc.line_items}
         approved = set(rc.approved_accessorials.keys())
         baseline = {"linehaul", "fuel", "other"} | rc_categories | approved
+        zero_amount = []
         for li in inv.line_items:
-            if li.category not in baseline:
-                res.findings.append(Finding(
-                    FindingType.UNAUTHORIZED_ACCESSORIAL, Severity.WARN,
-                    f"Unauthorized accessorial '{li.description}' ({li.category}) "
-                    f"billed {cents_to_str(li.amount_cents)} -- not on rate con or pre-approved.",
-                    money_impact_cents=li.amount_cents))
+            if li.category in baseline:
+                continue
+            if li.amount_cents <= 0:           # $0 / blank: no money at stake
+                if li.amount_cents == 0:
+                    zero_amount.append(li)
+                continue
+            res.findings.append(Finding(
+                FindingType.UNAUTHORIZED_ACCESSORIAL, Severity.WARN,
+                f"Unauthorized accessorial '{li.description}' ({li.category}) "
+                f"billed {cents_to_str(li.amount_cents)} -- not on rate con or pre-approved.",
+                money_impact_cents=li.amount_cents))
+        if zero_amount:
+            names = ", ".join(f"'{li.description}'" for li in zero_amount)
+            res.findings.append(Finding(
+                FindingType.ZERO_AMOUNT_ACCESSORIAL, Severity.INFO,
+                f"Zero/blank-amount accessorial line(s) ignored (no charge): {names}.",
+                money_impact_cents=0))
 
     def _check_accessorial_caps(self, rc: RateConfirmation, inv: CarrierInvoice, res: MatchResult):
         """Accessorial that IS approved but exceeds the approved cap."""
@@ -190,19 +204,32 @@ class MatchEngine:
         (a) carrier BILLED detention -> POD must support it, else it's deniable.
         (b) carrier did NOT bill detention but POD proves a long wait -> they're
             leaving money on the table (the ATRI money)."""
-        billed_detention = sum(
-            li.amount_cents for li in inv.line_items if li.category == "detention")
+        # only count detention lines that actually carry a charge (a $0/blank
+        # detention line means "not billed", handled by the underbilled case below)
+        detention_lines = [li for li in inv.line_items
+                           if li.category == "detention" and li.amount_cents > 0]
+        billed_detention = sum(li.amount_cents for li in detention_lines)
         free_hours = rc.free_time_hours if rc else 2.0
         # only use POD time if it passed the sanity checks
         time_on_site = pod.time_on_site_hours if self._pod_time_usable(pod) else None
+
+        # multiple detention lines on one invoice -> substantiated against their SUM
+        # above, but two detention charges for a single POD wait is a double-bill risk.
+        if len(detention_lines) > 1:
+            res.findings.append(Finding(
+                FindingType.MULTIPLE_DETENTION_LINES, Severity.WARN,
+                f"{len(detention_lines)} separate detention lines totaling "
+                f"{cents_to_str(billed_detention)} on one invoice -- verify the same "
+                f"wait isn't billed twice.",
+                money_impact_cents=0))
 
         # case (a): billed but unprovable
         if billed_detention > 0:
             if time_on_site is None:
                 res.findings.append(Finding(
                     FindingType.DETENTION_UNSUPPORTED, Severity.BLOCK,
-                    f"Detention of {cents_to_str(billed_detention)} billed but POD has no "
-                    f"usable arrival/departure timestamps to substantiate it -- deniable as-is.",
+                    f"Detention of {cents_to_str(billed_detention)} billed but "
+                    f"{self._pod_time_reason(pod)} -- deniable as-is.",
                     money_impact_cents=0))
             else:
                 billable_hours = max(0.0, time_on_site - free_hours)
@@ -216,21 +243,12 @@ class MatchEngine:
         # case (b): not billed but earned
         if billed_detention == 0 and time_on_site is not None:
             billable_hours = max(0.0, time_on_site - free_hours)
-            # cap at max_detention_hours: beyond that it's more likely layover/data error
-            capped = min(billable_hours, self.cfg.max_detention_hours)
             if billable_hours >= self.cfg.detention_round_hours:
-                rate = self._detention_rate(rc)
-                rounded = round(capped / self.cfg.detention_round_hours) \
-                    * self.cfg.detention_round_hours
-                owed = int(round(rounded * rate))
-                capped_note = (f" (capped at {self.cfg.max_detention_hours:.0f}h; "
-                               f"verify whether this was layover)"
-                               if billable_hours > self.cfg.max_detention_hours else "")
+                owed, note = self._value_underbilled_detention(rc, billable_hours)
                 res.findings.append(Finding(
                     FindingType.DETENTION_UNDERBILLED, Severity.WARN,
-                    f"POD shows {time_on_site:.2f}h on site ({rounded:.2f}h past free time) "
-                    f"but NO detention billed. Carrier is owed ~{cents_to_str(owed)} "
-                    f"@ {cents_to_str(rate)}/hr -- recoverable revenue{capped_note}.",
+                    f"POD shows {time_on_site:.2f}h on site "
+                    f"({billable_hours:.2f}h past free time) but NO detention billed. {note}",
                     money_impact_cents=-owed))
 
     def _check_pod_presence(self, inv: CarrierInvoice, pod: ProofOfDelivery | None, res: MatchResult):
@@ -293,14 +311,35 @@ class MatchEngine:
                 f"OCR error, or a layover rather than detention). Verify before billing.",
                 money_impact_cents=0))
 
+    @staticmethod
+    def _has_clock_time(dt) -> bool:
+        """A timestamp that parsed to exactly 00:00:00 almost always means the source
+        had a DATE but no clock time (the time defaulted to midnight). Treat that as
+        'no usable time of day' so we never compute detention off a fabricated midnight.
+        A genuine 00:00 arrival is rare; the cost of being wrong is a human review."""
+        return dt is not None and (dt.hour, dt.minute, dt.second) != (0, 0, 0)
+
     def _pod_time_usable(self, pod: ProofOfDelivery | None) -> bool:
-        """True only if POD has timestamps we trust enough to compute detention from."""
+        """True only if POD has timestamps we trust enough to compute detention from:
+        both present, both carrying a clock time, and the span sane."""
         if pod is None:
+            return False
+        if not (self._has_clock_time(pod.arrival_time)
+                and self._has_clock_time(pod.departure_time)):
             return False
         tos = pod.time_on_site_hours
         return (tos is not None
                 and tos >= 0
                 and tos <= self.cfg.implausible_time_on_site_hours)
+
+    def _pod_time_reason(self, pod: ProofOfDelivery | None) -> str:
+        """Human-readable reason a POD's timing can't substantiate billed detention."""
+        if (pod is not None and pod.arrival_time is not None
+                and pod.departure_time is not None
+                and not (self._has_clock_time(pod.arrival_time)
+                         and self._has_clock_time(pod.departure_time))):
+            return "the POD shows a delivery date but no arrival/departure clock time"
+        return "POD has no usable arrival/departure timestamps to substantiate it"
 
     def _detention_rate(self, rc: RateConfirmation | None) -> int:
         if rc:
@@ -311,3 +350,25 @@ class MatchEngine:
             if isinstance(cap, int) and cap > 0:
                 return cap  # treat a per-hour approval as the rate if that's all we have
         return self.cfg.default_detention_rate_cents
+
+    def _value_underbilled_detention(self, rc: RateConfirmation | None,
+                                     billable_hours: float) -> tuple[int, str]:
+        """Value an underbilled-detention claim, in integer cents, with a human note.
+        Honors a flat detention fee on the rate con; otherwise prices it per-hour at
+        the rate-con (or default) rate, capped at max_detention_hours."""
+        if rc is not None and rc.detention_flat_fee_cents is not None:
+            owed = rc.detention_flat_fee_cents
+            return owed, (f"A flat detention fee of {cents_to_str(owed)} is owed "
+                          f"-- recoverable revenue.")
+        rate = self._detention_rate(rc)
+        # cap at max_detention_hours: beyond that it's more likely layover/data error
+        capped = min(billable_hours, self.cfg.max_detention_hours)
+        rounded = round(capped / self.cfg.detention_round_hours) \
+            * self.cfg.detention_round_hours
+        owed = int(round(rounded * rate))
+        note = (f"Carrier is owed ~{cents_to_str(owed)} @ {cents_to_str(rate)}/hr "
+                f"({rounded:.2f}h) -- recoverable revenue")
+        if billable_hours > self.cfg.max_detention_hours:
+            note += (f" (capped at {self.cfg.max_detention_hours:.0f}h; "
+                     f"verify whether this was layover)")
+        return owed, note + "."
