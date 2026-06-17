@@ -92,7 +92,33 @@ TABULAR_LAYOUT = LayoutProfile(
     currency="USD",
 )
 
+# The domain layout: a freight carrier invoice / rate con where accessorials are
+# listed two-column as "DESCRIPTION ............ $AMOUNT" (no qty/unit columns) and
+# money carries a $ sign and thousands separators ("$1,900.00"). This is the most
+# common real freight format and the one the retail-receipt layouts don't cover.
+FREIGHT_INVOICE_LAYOUT = LayoutProfile(
+    name="freight_invoice",
+    line_item_pattern=(
+        r"(?P<desc>[A-Za-z][A-Za-z0-9 &/().',-]*?)\s+"
+        r"\$?(?P<total>\d{1,3}(?:,\d{3})+\.\d{2}|\d+\.\d{2})\s*$"),
+    field_labels={
+        "total": ["invoice total", "total due", "balance due", "amount due", "total"],
+    },
+    description_stopwords=[
+        "INVOICE", "TOTAL", "SUBTOTAL", "BALANCE", "AMOUNT", "DUE", "REMIT",
+        "BILL TO", "SHIP TO", "LOAD", "BOL", "DATE", "TERMS", "CARRIER",
+        "BROKER", "PAGE",
+    ],
+    merchant_suffixes=[
+        "LLC", "INC", "LTD", "CO", "FREIGHT", "LOGISTICS", "CARRIERS",
+        "TRANSPORT", "TRUCKING", "TRANSPORTATION",
+    ],
+    datetime_pattern=r"\b(\d{1,2}/\d{1,2}/\d{2,4})\b",
+    currency="USD",
+)
+
 LAYOUTS = {
     "generic_receipt": DEFAULT_LAYOUT,
     "tabular_invoice": TABULAR_LAYOUT,
+    "freight_invoice": FREIGHT_INVOICE_LAYOUT,
 }

@@ -28,6 +28,13 @@ def test_parse_money_repairs_ocr_noise():
     assert parse_money("") is None
 
 
+def test_parse_money_handles_freight_negatives_and_dollars():
+    assert parse_money("$1,900.00") == 1900.00    # $ sign + thousands separator
+    assert parse_money("2,360.00") == 2360.00
+    assert parse_money("150.00-") == -150.00      # trailing-minus (accounting)
+    assert parse_money("(50.00)") == -50.00       # parenthesized credit/adjustment
+
+
 # ---- parser on a fixed text block (deterministic, no OCR) -----------------
 SAMPLE_TEXT = """MR D.I.Y. (JOHOR) SDN BHD
 -INVOICE-
@@ -127,6 +134,32 @@ def test_different_layout_parses_tabular_invoice():
     assert "linehaul" in descs and "fuel" in descs and "detention" in descs
     assert r.lines[0].line_total == 1800.00
     assert r.total == 2250.00
+
+
+def test_freight_invoice_layout_two_column_amounts():
+    """A carrier invoice where accessorials are 'DESCRIPTION ... $AMOUNT' (no
+    qty/unit columns) with $ signs and thousands separators -- the common real
+    freight format the receipt layouts don't handle."""
+    from freight_audit.ocr import parse_receipt, validate, FREIGHT_INVOICE_LAYOUT
+    text = (
+        "Ironwood Freight Inc\n"
+        "INVOICE  IW-7781\n"
+        "Date 06/11/2026   Load L-100482\n"
+        "Linehaul                      $1,900.00\n"
+        "Fuel Surcharge                  $300.00\n"
+        "Detention (2 hrs)               $160.00\n"
+        "Invoice Total                 $2,360.00\n"
+    )
+    r = parse_receipt(text, layout=FREIGHT_INVOICE_LAYOUT)
+    assert r.currency == "USD"
+    assert "Ironwood Freight" in (r.merchant or "")
+    assert len(r.lines) == 3                       # the 3 accessorials, not the total line
+    descs = " ".join(l.description.lower() for l in r.lines)
+    assert "linehaul" in descs and "fuel" in descs and "detention" in descs
+    assert r.lines[0].line_total == 1900.00        # $ + thousands separator parsed
+    assert r.total == 2360.00
+    # line items sum to the printed total -> internally consistent, no review needed
+    assert validate(r).confident
 
 
 # ---- #6 confidence routing -----------------------------------------------
