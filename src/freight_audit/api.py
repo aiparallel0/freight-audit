@@ -23,14 +23,23 @@ from typing import Optional
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 
-from .security import KeyStore
-from .store import Store
+from .security import KeyStore, DuplicateAccount, InvalidEmail
+from .storage import get_store
+from .ratelimit import InMemoryRateLimiter
 
 KEYS_ENV = "FREIGHT_AUDIT_KEYS"
-DB_ENV = "FREIGHT_AUDIT_DB"
 
 logger = logging.getLogger("freight_audit.api")
 app = FastAPI(title="freight-audit", version="0.1.0")
+
+_limiter = None
+
+
+def _get_limiter():
+    global _limiter
+    if _limiter is None:
+        _limiter = InMemoryRateLimiter()
+    return _limiter
 
 
 def _usage_amounts(result) -> tuple[int, int]:
@@ -54,17 +63,44 @@ def _keystore() -> KeyStore:
     return KeyStore(os.getenv(KEYS_ENV, "api_keys.json"))
 
 
-def _store() -> Store:
-    return Store(os.getenv(DB_ENV, "freight_audit.db"))
+def _store():
+    return get_store()
+
+
+def _authenticate(x_api_key: Optional[str]) -> dict:
+    """Resolve {tenant, role, key} from an API key; 401 if missing/invalid/expired,
+    429 if the per-key rate limit is exceeded."""
+    if not x_api_key:
+        raise HTTPException(status_code=401, detail="missing API key")
+    ks = _keystore()
+    tenant = ks.tenant_for(x_api_key)          # None if invalid / revoked / expired
+    if tenant is None:
+        raise HTTPException(status_code=401, detail="invalid or expired API key")
+    if not _get_limiter().allow(x_api_key):
+        raise HTTPException(status_code=429, detail="rate limit exceeded")
+    return {"tenant": tenant, "role": ks.role_for(x_api_key), "key": x_api_key}
 
 
 def require_tenant(x_api_key: Optional[str] = Header(default=None)) -> str:
-    """Resolve the tenant the API key belongs to; 401 if missing/invalid. All
-    reads/writes are then scoped to this tenant, so keys can't cross tenants."""
-    tenant = _keystore().tenant_for(x_api_key) if x_api_key else None
-    if tenant is None:
-        raise HTTPException(status_code=401, detail="missing or invalid API key")
-    return tenant
+    """Any valid key; returns its tenant. Reads/writes are scoped to this tenant."""
+    return _authenticate(x_api_key)["tenant"]
+
+
+def _role_dep(*allowed: str):
+    """Dependency factory: caller must hold one of `allowed` (admin is always allowed).
+    Returns the caller's tenant."""
+    def dep(x_api_key: Optional[str] = Header(default=None)) -> str:
+        ctx = _authenticate(x_api_key)
+        if ctx["role"] != "admin" and ctx["role"] not in allowed:
+            raise HTTPException(status_code=403,
+                                detail=f"role '{ctx['role']}' not permitted")
+        return ctx["tenant"]
+    return dep
+
+
+auditor = _role_dep("api")        # api or admin -> may run audits / read loads
+reviewer = _role_dep("reviewer")  # reviewer or admin -> may decide reviews
+admin_only = _role_dep()          # admin only -> manage keys
 
 
 def _payload(result) -> dict:
@@ -92,7 +128,7 @@ def healthz() -> dict:
 
 
 @app.post("/audit")
-def audit(bundle: dict, tenant: str = Depends(require_tenant)) -> dict:
+def audit(bundle: dict, tenant: str = Depends(auditor)) -> dict:
     from . import process_load
     result = process_load(bundle.get("rate_confirmation"),
                           bundle.get("invoice"), bundle.get("pod"))
@@ -104,7 +140,7 @@ def audit(bundle: dict, tenant: str = Depends(require_tenant)) -> dict:
 async def audit_upload(rate_con: Optional[UploadFile] = File(default=None),
                        invoice: Optional[UploadFile] = File(default=None),
                        pod: Optional[UploadFile] = File(default=None),
-                       tenant: str = Depends(require_tenant)) -> dict:
+                       tenant: str = Depends(auditor)) -> dict:
     from .pipeline import audit_documents
     tmp = tempfile.mkdtemp()
     paths: dict[str, str] = {}
@@ -122,7 +158,7 @@ async def audit_upload(rate_con: Optional[UploadFile] = File(default=None),
 
 
 @app.get("/loads/{load_id}")
-def get_load(load_id: str, tenant: str = Depends(require_tenant)) -> dict:
+def get_load(load_id: str, tenant: str = Depends(auditor)) -> dict:
     row = _store().get_load(load_id, tenant_id=tenant)
     if row is None:
         raise HTTPException(status_code=404, detail="load not found")
@@ -130,7 +166,45 @@ def get_load(load_id: str, tenant: str = Depends(require_tenant)) -> dict:
 
 
 @app.get("/usage")
-def usage(tenant: str = Depends(require_tenant)) -> dict:
+def usage(tenant: str = Depends(auditor)) -> dict:
     """The tenant's billing record (what to charge) -- see billing.py."""
     from .billing import bill_tenant
     return bill_tenant(_store(), tenant)
+
+
+@app.post("/signup")
+def signup(body: dict) -> dict:
+    """Create an account: a new tenant + its first (admin) API key. Open endpoint."""
+    email = (body or {}).get("email", "")
+    try:
+        account = _keystore().create_account(email)
+    except InvalidEmail:
+        raise HTTPException(status_code=400, detail="invalid email address")
+    except DuplicateAccount:
+        raise HTTPException(status_code=409, detail="an account with that email already exists")
+    logger.info("signup tenant=%s", account["tenant"])
+    return account
+
+
+@app.post("/keys")
+def create_key(body: dict, x_api_key: Optional[str] = Header(default=None)) -> dict:
+    """Admin issues an additional key for their own tenant with a chosen role."""
+    tenant = admin_only(x_api_key)
+    role = (body or {}).get("role", "api")
+    ttl = (body or {}).get("ttl_days")
+    if role not in ("admin", "reviewer", "api"):
+        raise HTTPException(status_code=400, detail="invalid role")
+    key = _keystore().issue(label=f"{tenant}:{role}", tenant_id=tenant, role=role,
+                            ttl_days=ttl)
+    return {"api_key": key, "tenant": tenant, "role": role}
+
+
+@app.post("/keys/rotate")
+def rotate_key(x_api_key: Optional[str] = Header(default=None)) -> dict:
+    """Rotate the calling key: issue a replacement (same tenant/role) and revoke
+    the old one."""
+    require_tenant(x_api_key)                 # 401/429 if the key isn't valid
+    new_key = _keystore().rotate(x_api_key)
+    if new_key is None:
+        raise HTTPException(status_code=401, detail="cannot rotate this key")
+    return {"api_key": new_key}
