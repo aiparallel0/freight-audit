@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install system deps (tesseract + opencv libs)
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr libgl1 libglib2.0-0
+      - name: Install package with all extras
+        run: pip install -e ".[ocr,dev,synth,textract,api]"
+      - name: Run tests
+        run: python -m pytest -q
