@@ -50,6 +50,14 @@ CREATE TABLE IF NOT EXISTS audit_log (
     load_id   TEXT,
     detail    TEXT
 );
+CREATE TABLE IF NOT EXISTS usage (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id         TEXT NOT NULL DEFAULT 'default',
+    load_id           TEXT,
+    overpay_cents     INTEGER NOT NULL DEFAULT 0,
+    recoverable_cents INTEGER NOT NULL DEFAULT 0,
+    ts                TEXT NOT NULL
+);
 """
 
 
@@ -180,6 +188,21 @@ class Store:
         cur = self.conn.execute(
             "SELECT * FROM decisions WHERE tenant_id=? AND load_id=? ORDER BY id",
             (tenant_id, load_id))
+        return [dict(r) for r in cur.fetchall()]
+
+    # -- usage / metering --------------------------------------------------
+    def record_usage(self, tenant_id: str, load_id: Optional[str],
+                     overpay_cents: int = 0, recoverable_cents: int = 0) -> None:
+        """Record one billable audit event (value surfaced) for a tenant."""
+        self.conn.execute(
+            "INSERT INTO usage (tenant_id, load_id, overpay_cents, recoverable_cents, ts) "
+            "VALUES (?,?,?,?,?)",
+            (tenant_id, load_id, int(overpay_cents), int(recoverable_cents), _now()))
+        self.conn.commit()
+
+    def usage_rows(self, tenant_id: str = "default") -> list[dict]:
+        cur = self.conn.execute(
+            "SELECT * FROM usage WHERE tenant_id=? ORDER BY id", (tenant_id,))
         return [dict(r) for r in cur.fetchall()]
 
     def summary(self, tenant_id: str = "default") -> dict:

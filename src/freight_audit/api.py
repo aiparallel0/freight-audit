@@ -16,6 +16,7 @@ Configure:  FREIGHT_AUDIT_KEYS (key store path), FREIGHT_AUDIT_DB (sqlite path).
 """
 from __future__ import annotations
 
+import logging
 import os
 import tempfile
 from typing import Optional
@@ -28,7 +29,25 @@ from .store import Store
 KEYS_ENV = "FREIGHT_AUDIT_KEYS"
 DB_ENV = "FREIGHT_AUDIT_DB"
 
+logger = logging.getLogger("freight_audit.api")
 app = FastAPI(title="freight-audit", version="0.1.0")
+
+
+def _usage_amounts(result) -> tuple[int, int]:
+    """(overpayment, recoverable) cents surfaced by a result, for metering."""
+    over = sum(f.money_impact_cents for f in result.findings if f.money_impact_cents > 0)
+    rec = -sum(f.money_impact_cents for f in result.findings if f.money_impact_cents < 0)
+    return over, rec
+
+
+def _record(result, tenant: str) -> None:
+    store = _store()
+    store.save_result(result, client=tenant, actor="api", tenant_id=tenant)
+    over, rec = _usage_amounts(result)
+    store.record_usage(tenant, result.load_id, over, rec)
+    logger.info("audited tenant=%s load=%s severity=%s net=%s",
+                tenant, result.load_id, result.severity.value,
+                result.net_money_impact_cents)
 
 
 def _keystore() -> KeyStore:
@@ -64,7 +83,12 @@ def _payload(result) -> dict:
 
 @app.get("/healthz")
 def healthz() -> dict:
-    return {"status": "ok"}
+    try:
+        _store().conn.execute("SELECT 1").fetchone()
+        db = "ok"
+    except Exception:  # pragma: no cover - only on a broken db
+        db = "error"
+    return {"status": "ok" if db == "ok" else "degraded", "db": db, "version": app.version}
 
 
 @app.post("/audit")
@@ -72,7 +96,7 @@ def audit(bundle: dict, tenant: str = Depends(require_tenant)) -> dict:
     from . import process_load
     result = process_load(bundle.get("rate_confirmation"),
                           bundle.get("invoice"), bundle.get("pod"))
-    _store().save_result(result, client=tenant, actor="api", tenant_id=tenant)
+    _record(result, tenant)
     return _payload(result)
 
 
@@ -93,7 +117,7 @@ async def audit_upload(rate_con: Optional[UploadFile] = File(default=None),
     if not paths:
         raise HTTPException(status_code=400, detail="provide at least one document image")
     result = audit_documents(paths.get("rate_con"), paths.get("invoice"), paths.get("pod"))
-    _store().save_result(result, client=tenant, actor="api", tenant_id=tenant)
+    _record(result, tenant)
     return _payload(result)
 
 
@@ -103,3 +127,10 @@ def get_load(load_id: str, tenant: str = Depends(require_tenant)) -> dict:
     if row is None:
         raise HTTPException(status_code=404, detail="load not found")
     return row
+
+
+@app.get("/usage")
+def usage(tenant: str = Depends(require_tenant)) -> dict:
+    """The tenant's billing record (what to charge) -- see billing.py."""
+    from .billing import bill_tenant
+    return bill_tenant(_store(), tenant)
