@@ -39,10 +39,13 @@ def _store() -> Store:
     return Store(os.getenv(DB_ENV, "freight_audit.db"))
 
 
-def require_key(x_api_key: Optional[str] = Header(default=None)) -> str:
-    if not x_api_key or not _keystore().verify(x_api_key):
+def require_tenant(x_api_key: Optional[str] = Header(default=None)) -> str:
+    """Resolve the tenant the API key belongs to; 401 if missing/invalid. All
+    reads/writes are then scoped to this tenant, so keys can't cross tenants."""
+    tenant = _keystore().tenant_for(x_api_key) if x_api_key else None
+    if tenant is None:
         raise HTTPException(status_code=401, detail="missing or invalid API key")
-    return x_api_key
+    return tenant
 
 
 def _payload(result) -> dict:
@@ -65,11 +68,11 @@ def healthz() -> dict:
 
 
 @app.post("/audit")
-def audit(bundle: dict, key: str = Depends(require_key)) -> dict:
+def audit(bundle: dict, tenant: str = Depends(require_tenant)) -> dict:
     from . import process_load
     result = process_load(bundle.get("rate_confirmation"),
                           bundle.get("invoice"), bundle.get("pod"))
-    _store().save_result(result, actor="api")
+    _store().save_result(result, client=tenant, actor="api", tenant_id=tenant)
     return _payload(result)
 
 
@@ -77,7 +80,7 @@ def audit(bundle: dict, key: str = Depends(require_key)) -> dict:
 async def audit_upload(rate_con: Optional[UploadFile] = File(default=None),
                        invoice: Optional[UploadFile] = File(default=None),
                        pod: Optional[UploadFile] = File(default=None),
-                       key: str = Depends(require_key)) -> dict:
+                       tenant: str = Depends(require_tenant)) -> dict:
     from .pipeline import audit_documents
     tmp = tempfile.mkdtemp()
     paths: dict[str, str] = {}
@@ -90,13 +93,13 @@ async def audit_upload(rate_con: Optional[UploadFile] = File(default=None),
     if not paths:
         raise HTTPException(status_code=400, detail="provide at least one document image")
     result = audit_documents(paths.get("rate_con"), paths.get("invoice"), paths.get("pod"))
-    _store().save_result(result, actor="api")
+    _store().save_result(result, client=tenant, actor="api", tenant_id=tenant)
     return _payload(result)
 
 
 @app.get("/loads/{load_id}")
-def get_load(load_id: str, key: str = Depends(require_key)) -> dict:
-    row = _store().get_load(load_id)
+def get_load(load_id: str, tenant: str = Depends(require_tenant)) -> dict:
+    row = _store().get_load(load_id, tenant_id=tenant)
     if row is None:
         raise HTTPException(status_code=404, detail="load not found")
     return row

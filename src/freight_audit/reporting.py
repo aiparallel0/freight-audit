@@ -70,15 +70,15 @@ def report_from_results(results) -> dict:
     return aggregate(_rec(r) for r in results)
 
 
-def report_from_store(store) -> dict:
-    """ROI report from persisted history (duck-typed: needs all_loads())."""
+def report_from_store(store, tenant_id: str = "default") -> dict:
+    """ROI report from persisted history for one tenant (duck-typed: all_loads())."""
     def _rec(row):
         return {
             "severity": row.get("severity"),
             "auto_approvable": bool(row.get("auto_approvable")),
             "findings": json.loads(row.get("findings_json") or "[]"),
         }
-    return aggregate(_rec(row) for row in store.all_loads())
+    return aggregate(_rec(row) for row in store.all_loads(tenant_id=tenant_id))
 
 
 def format_report(summary: dict, title: str = "savings / ROI report") -> str:

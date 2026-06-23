@@ -37,10 +37,11 @@ class KeyStore:
         if os.path.exists(path):
             self.keys = json.load(open(path))
 
-    def issue(self, label: str) -> str:
+    def issue(self, label: str, tenant_id: str = "default") -> str:
         key = generate_key()
         self.keys[hash_key(key)] = {
             "label": label,
+            "tenant_id": tenant_id,
             "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "active": True,
         }
@@ -54,6 +55,15 @@ class KeyStore:
             hmac.compare_digest(hash_key(key), hash_key("x"))
             return False
         return bool(rec.get("active"))
+
+    def tenant_for(self, key: str) -> "str | None":
+        """Return the tenant a key belongs to, or None if missing/revoked.
+        Legacy keys issued without a tenant default to 'default'."""
+        rec = self.keys.get(hash_key(key))
+        if rec is None:
+            hmac.compare_digest(hash_key(key), hash_key("x"))
+            return None
+        return rec.get("tenant_id", "default") if rec.get("active") else None
 
     def revoke(self, key: str) -> bool:
         h = hash_key(key)
