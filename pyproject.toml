@@ -48,6 +48,7 @@ freight-audit = "freight_audit.cli:main"
 freight-audit-ocr = "freight_audit.ocr.cli:main"
 freight-audit-synth = "freight_audit.synth.cli:main"
 freight-audit-pipeline = "freight_audit.pipeline:main"
+freight-audit-vocab = "freight_audit.vocab_cli:main"
 
 [project.urls]
 Homepage = "https://github.com/your-org/freight-audit"
