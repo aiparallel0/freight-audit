@@ -48,3 +48,21 @@ def test_corpus_ocr_accuracy_benchmark(capsys):
     assert agg["total_exact_rate"] >= 0.8, agg
     assert agg["field_accuracy"] >= 0.8, agg
     assert agg["line_amount_recall"] >= 0.8, agg
+
+
+def test_main_cli_benchmark_requires_bundles(tmp_path):
+    from freight_audit.cli import main
+    with pytest.raises(SystemExit):                 # empty dir -> argparse error
+        main(["--benchmark", str(tmp_path)])
+
+
+def test_main_cli_benchmark_runs(tmp_path, capsys):
+    pytest.importorskip("PIL")
+    if shutil.which("tesseract") is None:
+        pytest.skip("tesseract binary not installed")
+    from freight_audit.cli import main
+    from freight_audit.synth import generate_load
+    b = generate_load(seed=99)
+    (tmp_path / f"{b['load_id']}.bundle.json").write_text(json.dumps(b))
+    assert main(["--benchmark", str(tmp_path)]) == 0
+    assert "OCR accuracy benchmark" in capsys.readouterr().out

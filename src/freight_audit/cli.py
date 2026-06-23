@@ -95,6 +95,8 @@ def main(argv=None):
     ap.add_argument("--actor", default="cli", help="actor name recorded in the audit log")
     ap.add_argument("--import-decisions", metavar="CSV",
                     help="ingest a review-console decisions CSV into --db, then exit")
+    ap.add_argument("--benchmark", metavar="DIR",
+                    help="render+OCR+score the *.bundle.json in DIR and print OCR accuracy, then exit")
     ap.add_argument("--no-color", action="store_true")
     args = ap.parse_args(argv)
 
@@ -105,6 +107,17 @@ def main(argv=None):
         applied, skipped = _import_decisions(args.import_decisions, args.db, args.actor)
         print(f"imported {applied} decision(s) into {args.db} "
               f"(skipped {skipped} non-decision row(s)).")
+        return 0
+
+    # OCR accuracy benchmark mode: render+OCR+score a corpus of synthetic bundles
+    if args.benchmark:
+        from .synth.benchmark import benchmark_bundles
+        from .synth.score import format_benchmark
+        paths = sorted(glob.glob(os.path.join(args.benchmark, "*.bundle.json")))
+        if not paths:
+            ap.error(f"no *.bundle.json files found in {args.benchmark}")
+        bundles = [json.load(open(p)) for p in paths]
+        print(format_benchmark(benchmark_bundles(bundles)))
         return 0
 
     def col(sev):
