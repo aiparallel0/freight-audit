@@ -35,6 +35,10 @@ ocr = [
 textract = [
     "boto3>=1.26",
 ]
+# Synthetic, PII-free freight document generation (rendering needs Pillow).
+synth = [
+    "pillow>=9.0",
+]
 dev = [
     "pytest>=7.0",
 ]
@@ -42,6 +46,7 @@ dev = [
 [project.scripts]
 freight-audit = "freight_audit.cli:main"
 freight-audit-ocr = "freight_audit.ocr.cli:main"
+freight-audit-synth = "freight_audit.synth.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/your-org/freight-audit"
