@@ -39,21 +39,28 @@ def score_invoice(predicted: dict, truth: dict) -> dict:
     predicted: {carrier_name, billed_total (dollars), line_amounts (dollars list)}
     truth:     invoice_ground_truth() -> {carrier_name, billed_total_cents,
                line_amounts_cents, ...}
-    Returns per-field correctness, an overall field accuracy, and line-amount recall.
+    Only fields PRESENT in truth are scored, so the same harness is fair across
+    datasets with different coverage (e.g. CORD has no vendor; SROIE has no lines).
+    Returns per-field correctness, overall field accuracy, and line-amount recall.
     """
     checks: dict = {}
 
-    pt = predicted.get("billed_total")
-    checks["billed_total"] = pt is not None and to_cents(pt) == truth["billed_total_cents"]
+    if truth.get("billed_total_cents") is not None:
+        pt = predicted.get("billed_total")
+        checks["billed_total"] = pt is not None and to_cents(pt) == truth["billed_total_cents"]
 
-    pc = normalize_text(predicted.get("carrier_name"))
-    truth_first = normalize_text(truth["carrier_name"]).split()[0] if truth.get("carrier_name") else ""
-    checks["carrier_name"] = bool(pc) and bool(truth_first) and truth_first in pc
+    if truth.get("carrier_name"):
+        pc = normalize_text(predicted.get("carrier_name"))
+        truth_first = normalize_text(truth["carrier_name"]).split()[0]
+        checks["carrier_name"] = bool(pc) and truth_first in pc
 
-    pred_cents = sorted(to_cents(x) for x in (predicted.get("line_amounts") or []))
     truth_cents = sorted(truth.get("line_amounts_cents") or [])
-    matched = _multiset_overlap(pred_cents, truth_cents)
-    checks["line_amounts"] = bool(truth_cents) and matched == len(truth_cents)
+    recall = 1.0
+    if truth_cents:
+        pred_cents = sorted(to_cents(x) for x in (predicted.get("line_amounts") or []))
+        matched = _multiset_overlap(pred_cents, truth_cents)
+        checks["line_amounts"] = matched == len(truth_cents)
+        recall = matched / len(truth_cents)
 
     n = len(checks)
     correct = sum(checks.values())
@@ -62,8 +69,19 @@ def score_invoice(predicted: dict, truth: dict) -> dict:
         "n": n,
         "correct": correct,
         "accuracy": round(correct / n, 4) if n else 0.0,
-        "line_amount_recall": round(matched / len(truth_cents), 4) if truth_cents else 1.0,
+        "line_amount_recall": round(recall, 4),
     }
+
+
+def format_benchmark(agg: dict) -> str:
+    """Human-readable OCR accuracy benchmark report."""
+    return "\n".join([
+        "FREIGHT-AUDIT  --  OCR accuracy benchmark",
+        f"  documents          : {agg.get('documents', 0)}",
+        f"  field accuracy     : {agg.get('field_accuracy', 0):.1%}",
+        f"  total exact rate   : {agg.get('total_exact_rate', 0):.1%}",
+        f"  line-amount recall : {agg.get('line_amount_recall', 0):.1%}",
+    ])
 
 
 def aggregate_scores(scores: list[dict]) -> dict:

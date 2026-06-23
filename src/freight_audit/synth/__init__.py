@@ -13,7 +13,12 @@ OCR layout for a labeled accuracy benchmark.
 from .generate import generate_load, sample_loads, invoice_ground_truth
 from .score import (
     score_invoice, aggregate_scores, ocr_invoice_fields, normalize_text,
+    format_benchmark,
 )
+from .datasets import (
+    cord_truth, sroie_truth, kie_entities_truth, fatura_truth, FATURA_LABELS,
+)
+from .benchmark import benchmark_bundles
 
 # Rendering needs Pillow (the `synth`/`ocr` extra); keep it optional.
 try:
@@ -27,6 +32,8 @@ except ImportError:  # pragma: no cover - exercised only without Pillow
 __all__ = [
     "generate_load", "sample_loads", "invoice_ground_truth",
     "score_invoice", "aggregate_scores", "ocr_invoice_fields", "normalize_text",
+    "format_benchmark", "benchmark_bundles",
+    "cord_truth", "sroie_truth", "kie_entities_truth", "fatura_truth", "FATURA_LABELS",
     "render_invoice", "render_rate_confirmation", "render_pod", "render_load",
     "HAVE_RENDER",
 ]

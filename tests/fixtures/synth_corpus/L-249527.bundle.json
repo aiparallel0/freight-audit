@@ -1,0 +1,48 @@
+{
+  "load_id": "L-249527",
+  "rate_confirmation": {
+    "load_id": "L-249527",
+    "broker_name": "Meridian Transport Solutions",
+    "carrier_name": "Rio Grande Freightways Inc",
+    "origin": "Charlotte, NC",
+    "destination": "Nashville, TN",
+    "agreed_total": "$1,781.00",
+    "pickup_date": "2026-07-01",
+    "free_time_hours": 2.0,
+    "line_items": [
+      {
+        "description": "Linehaul",
+        "amount": "$1,425.00"
+      },
+      {
+        "description": "Fuel Surcharge",
+        "amount": "$356.00"
+      }
+    ],
+    "approved_accessorials": {}
+  },
+  "invoice": {
+    "invoice_number": "RG-3380",
+    "load_id": "L-249527",
+    "carrier_name": "Rio Grande Freightways Inc",
+    "billed_total": "$1,781.00",
+    "invoice_date": "2026-07-03",
+    "line_items": [
+      {
+        "description": "Linehaul",
+        "amount": "$1,425.00"
+      },
+      {
+        "description": "Fuel Surcharge",
+        "amount": "$356.00"
+      }
+    ]
+  },
+  "pod": {
+    "load_id": "L-249527",
+    "delivered": true,
+    "arrival_time": "2026-07-01 10:00",
+    "departure_time": "2026-07-01 11:00",
+    "signed_by": "M. O'Connor"
+  }
+}

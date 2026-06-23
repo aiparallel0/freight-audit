@@ -29,7 +29,21 @@ def main(argv=None) -> int:
     ap.add_argument("--seed", type=int, default=0, help="base RNG seed (reproducible)")
     ap.add_argument("--bundles-only", action="store_true",
                     help="write engine-ready bundle JSON only (no images; no Pillow needed)")
+    ap.add_argument("--benchmark", metavar="DIR",
+                    help="render+OCR+score the *.bundle.json in DIR and print accuracy, then exit")
     args = ap.parse_args(argv)
+
+    # benchmark mode: report OCR accuracy over a corpus of bundles
+    if args.benchmark:
+        import glob
+        from .benchmark import benchmark_bundles
+        from .score import format_benchmark
+        paths = sorted(glob.glob(os.path.join(args.benchmark, "*.bundle.json")))
+        if not paths:
+            ap.error(f"no *.bundle.json files found in {args.benchmark}")
+        bundles = [json.load(open(p)) for p in paths]
+        print(format_benchmark(benchmark_bundles(bundles)))
+        return 0
 
     os.makedirs(args.out, exist_ok=True)
     rng = random.Random(args.seed)

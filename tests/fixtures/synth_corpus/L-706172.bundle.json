@@ -1,0 +1,48 @@
+{
+  "load_id": "L-706172",
+  "rate_confirmation": {
+    "load_id": "L-706172",
+    "broker_name": "Summit Load Partners Inc",
+    "carrier_name": "Ironwood Freight Inc",
+    "origin": "Newark, NJ",
+    "destination": "Baltimore, MD",
+    "agreed_total": "$1,710.00",
+    "pickup_date": "2026-01-07",
+    "free_time_hours": 2.0,
+    "line_items": [
+      {
+        "description": "Linehaul",
+        "amount": "$1,425.00"
+      },
+      {
+        "description": "Fuel Surcharge",
+        "amount": "$285.00"
+      }
+    ],
+    "approved_accessorials": {}
+  },
+  "invoice": {
+    "invoice_number": "IF-5095",
+    "load_id": "L-706172",
+    "carrier_name": "Ironwood Freight Inc",
+    "billed_total": "$1,710.00",
+    "invoice_date": "2026-01-09",
+    "line_items": [
+      {
+        "description": "Linehaul",
+        "amount": "$1,425.00"
+      },
+      {
+        "description": "Fuel Surcharge",
+        "amount": "$285.00"
+      }
+    ]
+  },
+  "pod": {
+    "load_id": "L-706172",
+    "delivered": true,
+    "arrival_time": "2026-01-07 08:00",
+    "departure_time": "2026-01-07 10:00",
+    "signed_by": "S. Kim"
+  }
+}
