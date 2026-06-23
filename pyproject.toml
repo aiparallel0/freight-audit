@@ -39,8 +39,15 @@ textract = [
 synth = [
     "pillow>=9.0",
 ]
+# REST API (FastAPI app in freight_audit.api).
+api = [
+    "fastapi>=0.110",
+    "uvicorn>=0.23",
+    "python-multipart>=0.0.6",
+]
 dev = [
     "pytest>=7.0",
+    "httpx>=0.24",
 ]
 
 [project.scripts]

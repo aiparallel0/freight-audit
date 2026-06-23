@@ -1,0 +1,102 @@
+"""
+REST API (PROMPTS #3).
+
+A small FastAPI app over the engine:
+  - GET  /healthz        -> liveness (open)
+  - POST /audit          -> audit a load-bundle JSON, return findings + severity
+  - POST /audit/upload   -> audit document images via the OCR pipeline
+  - GET  /loads/{id}     -> retrieve a previously persisted load
+
+Write/read endpoints are gated by the existing API-key store (security.KeyStore,
+X-API-Key header); each processed load is persisted via store.Store. FastAPI and
+the OCR pipeline are imported lazily/optionally so the core install is unaffected.
+
+Run:  uvicorn freight_audit.api:app
+Configure:  FREIGHT_AUDIT_KEYS (key store path), FREIGHT_AUDIT_DB (sqlite path).
+"""
+from __future__ import annotations
+
+import os
+import tempfile
+from typing import Optional
+
+from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
+
+from .security import KeyStore
+from .store import Store
+
+KEYS_ENV = "FREIGHT_AUDIT_KEYS"
+DB_ENV = "FREIGHT_AUDIT_DB"
+
+app = FastAPI(title="freight-audit", version="0.1.0")
+
+
+def _keystore() -> KeyStore:
+    return KeyStore(os.getenv(KEYS_ENV, "api_keys.json"))
+
+
+def _store() -> Store:
+    return Store(os.getenv(DB_ENV, "freight_audit.db"))
+
+
+def require_key(x_api_key: Optional[str] = Header(default=None)) -> str:
+    if not x_api_key or not _keystore().verify(x_api_key):
+        raise HTTPException(status_code=401, detail="missing or invalid API key")
+    return x_api_key
+
+
+def _payload(result) -> dict:
+    return {
+        "load_id": result.load_id,
+        "severity": result.severity.value,
+        "auto_approvable": result.auto_approvable,
+        "net_impact_cents": result.net_money_impact_cents,
+        "findings": [
+            {"type": f.type.value, "severity": f.severity.value,
+             "message": f.message, "money_impact_cents": f.money_impact_cents}
+            for f in result.findings
+        ],
+    }
+
+
+@app.get("/healthz")
+def healthz() -> dict:
+    return {"status": "ok"}
+
+
+@app.post("/audit")
+def audit(bundle: dict, key: str = Depends(require_key)) -> dict:
+    from . import process_load
+    result = process_load(bundle.get("rate_confirmation"),
+                          bundle.get("invoice"), bundle.get("pod"))
+    _store().save_result(result, actor="api")
+    return _payload(result)
+
+
+@app.post("/audit/upload")
+async def audit_upload(rate_con: Optional[UploadFile] = File(default=None),
+                       invoice: Optional[UploadFile] = File(default=None),
+                       pod: Optional[UploadFile] = File(default=None),
+                       key: str = Depends(require_key)) -> dict:
+    from .pipeline import audit_documents
+    tmp = tempfile.mkdtemp()
+    paths: dict[str, str] = {}
+    for name, upload in (("rate_con", rate_con), ("invoice", invoice), ("pod", pod)):
+        if upload is not None:
+            p = os.path.join(tmp, os.path.basename(upload.filename or f"{name}.png"))
+            with open(p, "wb") as fh:
+                fh.write(await upload.read())
+            paths[name] = p
+    if not paths:
+        raise HTTPException(status_code=400, detail="provide at least one document image")
+    result = audit_documents(paths.get("rate_con"), paths.get("invoice"), paths.get("pod"))
+    _store().save_result(result, actor="api")
+    return _payload(result)
+
+
+@app.get("/loads/{load_id}")
+def get_load(load_id: str, key: str = Depends(require_key)) -> dict:
+    row = _store().get_load(load_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="load not found")
+    return row
