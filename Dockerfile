@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 COPY . /app
-RUN pip install --no-cache-dir ".[ocr,textract,synth,api]"
+RUN pip install --no-cache-dir ".[ocr,textract,synth,api,postgres]"
 
 # Persist the SQLite store + API keys outside the image layer.
 RUN mkdir -p /data
