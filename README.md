@@ -14,11 +14,12 @@ Plus an optional **OCR pipeline** that turns a document photo into structured,
 self-validated data, so the audit can run on scanned paperwork rather than
 hand-keyed JSON.
 
-> Status: this is a correct, tested **engine + OCR pipeline** (37 passing tests),
-> not a turnkey SaaS. The matching logic and OCR are real; the per-client work
-> (a specific carrier's worst scans, a specific live TMS endpoint, full
-> multi-tenant auth) is deliberately left as configuration or a one-method swap.
-> See [`docs/STATUS.md`](docs/STATUS.md) for the exact line.
+> Status: the full technical roadmap is implemented and tested (97 passing tests):
+> real OCR (Tesseract + AWS Textract), an image→audit pipeline, a FastAPI REST API
+> with multi-tenant auth + persistence, vocabulary curation, TMS write-back, a
+> synthetic-document generator + OCR accuracy benchmark, a usage/billing scaffold,
+> Docker, and CI. What's left is non-code (go-to-market and live payment
+> processing). See [`docs/STATUS.md`](docs/STATUS.md).
 
 ---
 
@@ -145,7 +146,7 @@ a cloud OCR API is one method body — the parser, validator, and tests don't ch
 
 ```bash
 pip install -e ".[ocr,dev]"
-pytest                      # 37 tests
+pytest                      # 97 tests
 ```
 
 Working on this with **Claude Code**? Start with [`CLAUDE.md`](CLAUDE.md) (project
