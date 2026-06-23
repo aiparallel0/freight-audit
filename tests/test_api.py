@@ -35,7 +35,9 @@ def client(tmp_path, monkeypatch):
 def test_healthz_is_open(client):
     c, _ = client
     r = c.get("/healthz")
-    assert r.status_code == 200 and r.json() == {"status": "ok"}
+    assert r.status_code == 200
+    body = r.json()
+    assert body["status"] == "ok" and body["db"] == "ok" and body["version"]
 
 
 def test_audit_requires_api_key(client):
