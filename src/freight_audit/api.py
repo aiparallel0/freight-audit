@@ -19,14 +19,17 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
+import time
 from typing import Optional
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile
+from fastapi.responses import PlainTextResponse
 
 from .security import KeyStore, DuplicateAccount, InvalidEmail
 from .storage import get_store
 from .ratelimit import InMemoryRateLimiter
 from .secret_provider import get_secret
+from .metrics import METRICS
 
 KEYS_ENV = "FREIGHT_AUDIT_KEYS"
 
@@ -41,6 +44,17 @@ def _get_limiter():
     if _limiter is None:
         _limiter = InMemoryRateLimiter()
     return _limiter
+
+
+@app.middleware("http")
+async def _metrics_middleware(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    elapsed_ms = (time.perf_counter() - start) * 1000.0
+    key = request.headers.get("X-API-Key")
+    tenant = (_keystore().tenant_for(key) if key else None) or "anonymous"
+    METRICS.record(tenant, request.url.path, elapsed_ms, response.status_code)
+    return response
 
 
 def _usage_amounts(result) -> tuple[int, int]:
@@ -126,6 +140,12 @@ def healthz() -> dict:
     except Exception:  # pragma: no cover - only on a broken db
         db = "error"
     return {"status": "ok" if db == "ok" else "degraded", "db": db, "version": app.version}
+
+
+@app.get("/metrics")
+def metrics_endpoint():
+    """Prometheus metrics: per-tenant request count, error count, avg latency."""
+    return PlainTextResponse(METRICS.render_prometheus())
 
 
 @app.post("/audit")
