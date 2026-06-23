@@ -208,3 +208,7 @@ def rotate_key(x_api_key: Optional[str] = Header(default=None)) -> dict:
     if new_key is None:
         raise HTTPException(status_code=401, detail="cannot rotate this key")
     return {"api_key": new_key}
+
+
+# Register the browser routes (landing / signup / demo / review console) on `app`.
+from . import web  # noqa: E402,F401
