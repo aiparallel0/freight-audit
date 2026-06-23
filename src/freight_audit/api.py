@@ -21,11 +21,12 @@ import os
 import tempfile
 from typing import Optional
 
-from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile
 
 from .security import KeyStore, DuplicateAccount, InvalidEmail
 from .storage import get_store
 from .ratelimit import InMemoryRateLimiter
+from .secret_provider import get_secret
 
 KEYS_ENV = "FREIGHT_AUDIT_KEYS"
 
@@ -208,6 +209,26 @@ def rotate_key(x_api_key: Optional[str] = Header(default=None)) -> dict:
     if new_key is None:
         raise HTTPException(status_code=401, detail="cannot rotate this key")
     return {"api_key": new_key}
+
+
+@app.post("/billing/webhook")
+async def billing_webhook(request: Request) -> dict:
+    """Receive Stripe payment events. Verifies the signature with the SDK using
+    get_secret('STRIPE_WEBHOOK_SECRET'); 400 on a bad signature."""
+    import stripe
+    payload = await request.body()
+    sig = request.headers.get("Stripe-Signature", "")
+    try:
+        event = stripe.Webhook.construct_event(payload, sig, get_secret("STRIPE_WEBHOOK_SECRET"))
+    except Exception:
+        raise HTTPException(status_code=400, detail="invalid signature")
+    etype = event["type"] if isinstance(event, dict) else getattr(event, "type", None)
+    logger.info("stripe webhook event=%s", etype)
+    if etype in ("payment_intent.succeeded", "payment_intent.payment_failed"):
+        obj = (event.get("data", {}) or {}).get("object", {}) if isinstance(event, dict) else {}
+        logger.info("payment %s tenant=%s amount=%s", etype,
+                    (obj.get("metadata") or {}).get("tenant"), obj.get("amount"))
+    return {"received": True, "type": etype}
 
 
 # Register the browser routes (landing / signup / demo / review console) on `app`.

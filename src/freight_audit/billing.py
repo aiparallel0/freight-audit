@@ -22,12 +22,12 @@ of the value delivered). Both are configurable; the defaults are placeholders.
 from __future__ import annotations
 
 import json
-import os
 import urllib.request
 from dataclasses import dataclass
 from typing import Optional
 
 from .models import cents_to_str
+from .secret_provider import get_secret
 
 BASE_FEE_ENV = "FREIGHT_AUDIT_BILL_BASE_CENTS"
 PCT_SAVINGS_ENV = "FREIGHT_AUDIT_BILL_PCT"
@@ -43,8 +43,8 @@ class Pricing:
     @classmethod
     def from_env(cls) -> "Pricing":
         return cls(
-            base_fee_cents=int(os.getenv(BASE_FEE_ENV, "50")),
-            pct_savings=float(os.getenv(PCT_SAVINGS_ENV, "0")),
+            base_fee_cents=int(get_secret(BASE_FEE_ENV, "50")),
+            pct_savings=float(get_secret(PCT_SAVINGS_ENV, "0")),
         )
 
     def bill_cents(self, audits: int, value_cents: int) -> int:
@@ -75,18 +75,29 @@ def bill_tenant(store, tenant_id: str = "default",
     }
 
 
-def charge(amount_cents: int, tenant: str, endpoint: Optional[str] = None,
-           token: Optional[str] = None, *, currency: str = "usd",
-           timeout: int = 30) -> dict:
-    """Submit a charge to a generic payment endpoint (env-configured). This is the
-    seam where a real processor plugs in -- credentials come from the environment
-    only ($FREIGHT_AUDIT_BILLING_URL / _TOKEN), never source. Mock urlopen to test."""
-    endpoint = endpoint or os.getenv(BILLING_URL_ENV)
-    token = token or os.getenv(BILLING_TOKEN_ENV)
-    if not endpoint:
-        raise ValueError(
-            f"no billing endpoint configured: pass endpoint= or set ${BILLING_URL_ENV}")
+STRIPE_KEY_ENV = "STRIPE_API_KEY"
 
+
+def _stripe_charge(amount_cents: int, tenant: str, currency: str,
+                   metadata: Optional[dict]) -> dict:
+    """Create a Stripe PaymentIntent for the metered amount. Uses the stripe SDK;
+    the API key comes from get_secret('STRIPE_API_KEY')."""
+    import stripe
+    intent = stripe.PaymentIntent.create(
+        amount=int(amount_cents),
+        currency=currency,
+        description=f"freight-audit usage for {tenant}",
+        metadata={"tenant": tenant, **(metadata or {})},
+        api_key=get_secret(STRIPE_KEY_ENV),
+    )
+    status = intent.get("status") if isinstance(intent, dict) else getattr(intent, "status", None)
+    iid = intent.get("id") if isinstance(intent, dict) else getattr(intent, "id", None)
+    return {"processor": "stripe", "status": status, "id": iid,
+            "tenant": tenant, "amount_cents": int(amount_cents)}
+
+
+def _generic_charge(amount_cents: int, tenant: str, endpoint: str,
+                    token: Optional[str], currency: str, timeout: int) -> dict:
     body = json.dumps({"tenant": tenant, "amount_cents": int(amount_cents),
                        "currency": currency}).encode("utf-8")
     req = urllib.request.Request(endpoint, data=body, method="POST",
@@ -100,5 +111,34 @@ def charge(amount_cents: int, tenant: str, endpoint: Optional[str] = None,
         parsed = json.loads(raw) if raw else None
     except ValueError:
         parsed = raw
-    return {"status": status, "tenant": tenant,
+    return {"processor": "generic", "status": status, "tenant": tenant,
             "amount_cents": int(amount_cents), "response": parsed}
+
+
+def charge(amount_cents: int, tenant: str, endpoint: Optional[str] = None,
+           token: Optional[str] = None, *, currency: str = "usd",
+           metadata: Optional[dict] = None, timeout: int = 30) -> dict:
+    """Submit a charge through the configured processor: Stripe when STRIPE_API_KEY
+    is set, otherwise a generic REST endpoint ($FREIGHT_AUDIT_BILLING_URL/_TOKEN).
+    Credentials come from the secret provider only, never source."""
+    if get_secret(STRIPE_KEY_ENV):
+        return _stripe_charge(amount_cents, tenant, currency, metadata)
+    endpoint = endpoint or get_secret(BILLING_URL_ENV)
+    token = token or get_secret(BILLING_TOKEN_ENV)
+    if not endpoint:
+        raise ValueError(
+            f"no payment processor configured: set ${STRIPE_KEY_ENV} or ${BILLING_URL_ENV}")
+    return _generic_charge(amount_cents, tenant, endpoint, token, currency, timeout)
+
+
+def charge_tenant(store, tenant_id: str, pricing: Optional[Pricing] = None,
+                  *, currency: str = "usd") -> dict:
+    """Meter -> price -> charge: bill the tenant's recorded usage. Skips a zero bill."""
+    bill = bill_tenant(store, tenant_id, pricing)
+    amount = bill["billing_cents"]
+    if amount <= 0:
+        return {"skipped": True, "reason": "nothing to bill", "bill": bill}
+    result = charge(amount, tenant_id, currency=currency,
+                    metadata={"audits": str(bill["audits"]),
+                              "value_cents": str(bill["value_cents"])})
+    return {**result, "bill": bill}
