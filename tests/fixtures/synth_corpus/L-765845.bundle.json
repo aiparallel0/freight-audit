@@ -1,0 +1,61 @@
+{
+  "load_id": "L-765845",
+  "rate_confirmation": {
+    "load_id": "L-765845",
+    "broker_name": "Summit Load Partners Inc",
+    "carrier_name": "Blue Ridge Trucking Co",
+    "origin": "Denver, CO",
+    "destination": "Salt Lake City, UT",
+    "agreed_total": "$2,160.00",
+    "pickup_date": "2026-05-16",
+    "free_time_hours": 2.0,
+    "line_items": [
+      {
+        "description": "Linehaul",
+        "amount": "$1,800.00"
+      },
+      {
+        "description": "Fuel Surcharge",
+        "amount": "$360.00"
+      },
+      {
+        "description": "Detention",
+        "amount": "$0.00",
+        "rate": "$90.00"
+      }
+    ],
+    "approved_accessorials": {
+      "detention": null
+    }
+  },
+  "invoice": {
+    "invoice_number": "BR-1231",
+    "load_id": "L-765845",
+    "carrier_name": "Blue Ridge Trucking Co",
+    "billed_total": "$2,340.00",
+    "invoice_date": "2026-05-18",
+    "line_items": [
+      {
+        "description": "Linehaul",
+        "amount": "$1,800.00"
+      },
+      {
+        "description": "Fuel Surcharge",
+        "amount": "$360.00"
+      },
+      {
+        "description": "Detention (2 hrs)",
+        "amount": "$180.00",
+        "quantity": 2.0,
+        "rate": "$90.00"
+      }
+    ]
+  },
+  "pod": {
+    "load_id": "L-765845",
+    "delivered": true,
+    "arrival_time": "2026-05-16 12:00",
+    "departure_time": "2026-05-16 16:00",
+    "signed_by": "J. Pierre"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "load_id": "L-573780",
+  "rate_confirmation": {
+    "load_id": "L-573780",
+    "broker_name": "Anchor Freight Brokerage LLC",
+    "carrier_name": "Rio Grande Freightways Inc",
+    "origin": "Newark, NJ",
+    "destination": "Baltimore, MD",
+    "agreed_total": "$1,594.00",
+    "pickup_date": "2026-09-28",
+    "free_time_hours": 2.0,
+    "line_items": [
+      {
+        "description": "Linehaul",
+        "amount": "$1,275.00"
+      },
+      {
+        "description": "Fuel Surcharge",
+        "amount": "$319.00"
+      }
+    ],
+    "approved_accessorials": {}
+  },
+  "invoice": {
+    "invoice_number": "RG-5970",
+    "load_id": "L-573780",
+    "carrier_name": "Rio Grande Freightways Inc",
+    "billed_total": "$1,594.00",
+    "invoice_date": "2026-09-30",
+    "line_items": [
+      {
+        "description": "Linehaul",
+        "amount": "$1,275.00"
+      },
+      {
+        "description": "Fuel Surcharge",
+        "amount": "$319.00"
+      }
+    ]
+  },
+  "pod": {
+    "load_id": "L-573780",
+    "delivered": true,
+    "arrival_time": "2026-09-28 06:45",
+    "departure_time": "2026-09-28 07:45",
+    "signed_by": "D. Salazar"
+  }
+}

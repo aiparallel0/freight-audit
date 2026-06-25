@@ -219,3 +219,105 @@ def test_tolerance_ignores_pennies():
                          line_items=[LineItem("Linehaul", to_cents("$500.50"))])
     r = e.match(rc, inv, None)
     assert not _has(r, FindingType.TOTAL_MISMATCH)  # 50c within $1 tolerance
+
+
+# ---------------------------------------------------------------------------
+# hardening: messy real-world edge cases (PROMPTS.md #6)
+# ---------------------------------------------------------------------------
+def test_partial_pod_date_only_not_used_for_detention():
+    """A POD with a date but no clock time parses to midnight; we must NOT fabricate
+    detention off that fake 00:00 arrival."""
+    from datetime import datetime
+    e = MatchEngine()
+    rc = RateConfirmation("L", "B", "C", "O", "D", to_cents("$1,000.00"),
+                          line_items=[LineItem("Linehaul", to_cents("$1,000.00"))],
+                          free_time_hours=2.0)
+    inv = CarrierInvoice("INV", "L", "C", to_cents("$1,000.00"),
+                         line_items=[LineItem("Linehaul", to_cents("$1,000.00"))])
+    pod = ProofOfDelivery("L", True,
+                          arrival_time=datetime(2026, 6, 1, 0, 0),    # date only -> midnight
+                          departure_time=datetime(2026, 6, 1, 5, 0))  # would be 5h on site
+    r = e.match(rc, inv, pod)
+    assert not _has(r, FindingType.DETENTION_UNDERBILLED)
+
+
+def test_detention_billed_with_date_only_pod_is_unsupported():
+    from datetime import datetime
+    e = MatchEngine()
+    rc = RateConfirmation("L", "B", "C", "O", "D", to_cents("$1,000.00"),
+                          line_items=[LineItem("Linehaul", to_cents("$1,000.00"))],
+                          approved_accessorials={"detention": to_cents("$300.00")},
+                          free_time_hours=2.0)
+    inv = CarrierInvoice("INV", "L", "C", to_cents("$1,200.00"),
+                         line_items=[LineItem("Linehaul", to_cents("$1,000.00")),
+                                     LineItem("Detention", to_cents("$200.00"))])
+    pod = ProofOfDelivery("L", True,
+                          arrival_time=datetime(2026, 6, 1, 0, 0),
+                          departure_time=datetime(2026, 6, 1, 0, 0))  # date only, no times
+    r = e.match(rc, inv, pod)
+    assert r.severity == Severity.BLOCK
+    assert _has(r, FindingType.DETENTION_UNSUPPORTED)
+    msg = " ".join(f.message for f in r.findings
+                   if f.type == FindingType.DETENTION_UNSUPPORTED)
+    assert "date" in msg.lower()
+
+
+def test_multiple_detention_lines_flagged_and_summed():
+    from datetime import datetime
+    e = MatchEngine()
+    rc = RateConfirmation("L", "B", "C", "O", "D", to_cents("$1,000.00"),
+                          line_items=[LineItem("Linehaul", to_cents("$1,000.00"))],
+                          approved_accessorials={"detention": None},  # detention allowed
+                          free_time_hours=2.0)
+    inv = CarrierInvoice("INV", "L", "C", to_cents("$1,230.00"),
+                         line_items=[LineItem("Linehaul", to_cents("$1,000.00")),
+                                     LineItem("Detention", to_cents("$150.00")),
+                                     LineItem("Detention - extra wait", to_cents("$80.00"))])
+    pod = ProofOfDelivery("L", True,
+                          arrival_time=datetime(2026, 6, 1, 6, 0),
+                          departure_time=datetime(2026, 6, 1, 12, 0))  # 6h -> supported
+    r = e.match(rc, inv, pod)
+    assert _has(r, FindingType.MULTIPLE_DETENTION_LINES)
+    # the flag itself carries no money impact (sum is verified, not double-counted)
+    assert _impact(r, FindingType.MULTIPLE_DETENTION_LINES) == 0
+    # both lines are detention and the POD supports the wait -> not "unsupported"
+    assert not _has(r, FindingType.DETENTION_UNSUPPORTED)
+
+
+def test_zero_amount_accessorial_not_flagged_unauthorized():
+    e = MatchEngine()
+    rc = RateConfirmation("L", "B", "C", "O", "D", to_cents("$1,000.00"),
+                          line_items=[LineItem("Linehaul", to_cents("$1,000.00"))])
+    inv = CarrierInvoice("INV", "L", "C", to_cents("$1,000.00"),
+                         line_items=[LineItem("Linehaul", to_cents("$1,000.00")),
+                                     LineItem("Liftgate", 0)])  # quoted but $0 / waived
+    r = e.match(rc, inv, None)
+    assert not _has(r, FindingType.UNAUTHORIZED_ACCESSORIAL)   # $0 is not an overcharge
+    assert _has(r, FindingType.ZERO_AMOUNT_ACCESSORIAL)
+    assert _impact(r, FindingType.ZERO_AMOUNT_ACCESSORIAL) == 0
+    assert r.auto_approvable                                    # INFO only -> still safe
+
+
+def test_flat_fee_detention_valued_as_flat_not_hourly():
+    """Rate con prices detention as a flat fee; an underbilled claim is that flat
+    amount regardless of hours (also covers the new extract.py field mapping)."""
+    from datetime import datetime
+    e = MatchEngine()
+    rc = JsonFixtureProvider().extract_rate_confirmation({
+        "load_id": "L", "agreed_total": "$1,000.00", "free_time_hours": 2.0,
+        "detention_flat_fee": "$150.00",
+        "line_items": [{"description": "Linehaul", "amount": "$1,000.00"}],
+    })
+    assert rc.detention_flat_fee_cents == to_cents("$150.00")
+    inv = CarrierInvoice("INV", "L", "C", to_cents("$1,000.00"),
+                         line_items=[LineItem("Linehaul", to_cents("$1,000.00"))])
+    # 7h on site (5h past free): per-hour this would be a big number; flat stays $150
+    pod_long = ProofOfDelivery("L", True,
+                               arrival_time=datetime(2026, 6, 1, 6, 0),
+                               departure_time=datetime(2026, 6, 1, 13, 0))
+    assert _impact(e.match(rc, inv, pod_long), FindingType.DETENTION_UNDERBILLED) == -15000
+    # fewer hours past free -> still the same flat fee
+    pod_short = ProofOfDelivery("L", True,
+                                arrival_time=datetime(2026, 6, 1, 6, 0),
+                                departure_time=datetime(2026, 6, 1, 9, 30))  # 1.5h past free
+    assert _impact(e.match(rc, inv, pod_short), FindingType.DETENTION_UNDERBILLED) == -15000

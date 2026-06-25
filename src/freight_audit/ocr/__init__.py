@@ -13,7 +13,9 @@ from .extract import (
     Receipt, ReceiptLine, extract_receipt, parse_receipt, parse_money,
     ocr_image, ocr_mean_confidence,
 )
-from .layouts import LayoutProfile, DEFAULT_LAYOUT, TABULAR_LAYOUT, LAYOUTS
+from .layouts import (
+    LayoutProfile, DEFAULT_LAYOUT, TABULAR_LAYOUT, FREIGHT_INVOICE_LAYOUT, LAYOUTS,
+)
 from .validate import validate, ValidationResult, Check, Severity
 from .preprocess import preprocess, save_preprocessed
 
@@ -23,7 +25,8 @@ OcrSeverity = Severity
 __all__ = [
     "Receipt", "ReceiptLine", "extract_receipt", "parse_receipt", "parse_money",
     "ocr_image", "ocr_mean_confidence",
-    "LayoutProfile", "DEFAULT_LAYOUT", "TABULAR_LAYOUT", "LAYOUTS",
+    "LayoutProfile", "DEFAULT_LAYOUT", "TABULAR_LAYOUT", "FREIGHT_INVOICE_LAYOUT",
+    "LAYOUTS",
     "validate", "ValidationResult", "Check", "Severity", "OcrSeverity",
     "preprocess", "save_preprocessed",
 ]

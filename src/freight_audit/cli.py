@@ -27,6 +27,8 @@ from . import (
 )
 from .profiles import apply_profile_rules
 from .models import FindingType
+from .reporting import report_from_results, report_from_store, format_report
+from .store import Store
 
 C = {"ok": "\033[92m", "info": "\033[96m", "warn": "\033[93m",
      "block": "\033[91m", "end": "\033[0m"}
@@ -40,6 +42,27 @@ def _bundled_samples() -> list[str]:
     if os.path.isdir(candidate):
         return sorted(glob.glob(os.path.join(candidate, "*.json")))
     return []
+
+
+def _import_decisions(path, db_path, actor):
+    """Ingest a review-console decisions CSV (columns include load_id, decision)
+    into the SQLite store -- records each approve/dispute + an audit-log entry.
+    Closes the human-review loop without needing a web server."""
+    store = Store(db_path)
+    applied = skipped = 0
+    try:
+        with open(path, newline="") as fh:
+            for row in csv.DictReader(fh):
+                load_id = (row.get("load_id") or "").strip()
+                decision = (row.get("decision") or "").strip().lower()
+                if not load_id or decision not in ("approved", "disputed"):
+                    skipped += 1                      # e.g. an "undecided" row
+                    continue
+                store.record_decision(load_id, decision, actor=actor)
+                applied += 1
+    finally:
+        store.close()
+    return applied, skipped
 
 
 def _process(path, provider, engine, profile):
@@ -66,8 +89,36 @@ def main(argv=None):
     ap.add_argument("--export-out", help="path for --export output (default auto-named)")
     ap.add_argument("--csv", help="write a flat CSV summary to this path")
     ap.add_argument("--json", help="write structured JSON to this path")
+    ap.add_argument("--report", action="store_true",
+                    help="print a savings/ROI report for this run")
+    ap.add_argument("--db", help="persist results (and imported decisions) to this SQLite store")
+    ap.add_argument("--actor", default="cli", help="actor name recorded in the audit log")
+    ap.add_argument("--import-decisions", metavar="CSV",
+                    help="ingest a review-console decisions CSV into --db, then exit")
+    ap.add_argument("--benchmark", metavar="DIR",
+                    help="render+OCR+score the *.bundle.json in DIR and print OCR accuracy, then exit")
     ap.add_argument("--no-color", action="store_true")
     args = ap.parse_args(argv)
+
+    # review-loop ingest mode: pull the console's exported decisions into the store
+    if args.import_decisions:
+        if not args.db:
+            ap.error("--import-decisions requires --db")
+        applied, skipped = _import_decisions(args.import_decisions, args.db, args.actor)
+        print(f"imported {applied} decision(s) into {args.db} "
+              f"(skipped {skipped} non-decision row(s)).")
+        return 0
+
+    # OCR accuracy benchmark mode: render+OCR+score a corpus of synthetic bundles
+    if args.benchmark:
+        from .synth.benchmark import benchmark_bundles
+        from .synth.score import format_benchmark
+        paths = sorted(glob.glob(os.path.join(args.benchmark, "*.bundle.json")))
+        if not paths:
+            ap.error(f"no *.bundle.json files found in {args.benchmark}")
+        bundles = [json.load(open(p)) for p in paths]
+        print(format_benchmark(benchmark_bundles(bundles)))
+        return 0
 
     def col(sev):
         return sev.upper() if args.no_color else f"{C.get(sev,'')}{sev.upper()}{C['end']}"
@@ -84,6 +135,7 @@ def main(argv=None):
             set_vocabulary(Vocabulary.load(client_overlay=profile.vocab_overlay_path))
         print(f"(using client profile: {profile.name})")
     engine = MatchEngine(profile.to_engine_config() if profile else None)
+    store = Store(args.db) if args.db else None
 
     rows, json_out, results = [], [], []
     print("=" * 78)
@@ -95,6 +147,9 @@ def main(argv=None):
     for path in files:
         _, result = _process(path, provider, engine, profile)
         results.append(result)
+        if store is not None:
+            store.save_result(result, client=(profile.name if profile else "default"),
+                              actor=args.actor)
         sev = result.severity.value
         over = sum(f.money_impact_cents for f in result.findings if f.money_impact_cents > 0)
         rec = -sum(f.money_impact_cents for f in result.findings if f.money_impact_cents < 0)
@@ -133,6 +188,12 @@ def main(argv=None):
     print(f"  TOTAL $ TOUCHED     : {cents_to_str(total_over + total_rec)}")
     print("=" * 78)
 
+    if args.report:
+        print("\n" + format_report(report_from_results(results)))
+        if store is not None:
+            print("\n" + format_report(report_from_store(store),
+                                        title="cumulative ROI (all loads in store)"))
+
     if args.csv and rows:
         with open(args.csv, "w", newline="") as fh:
             w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
@@ -145,6 +206,10 @@ def main(argv=None):
         out_path = args.export_out or f"export_{args.export}{EXPORTER_EXT.get(args.export, '.txt')}"
         open(out_path, "w").write(export(results, args.export))
         print(f"{args.export} export written -> {out_path}")
+
+    if store is not None:
+        print(f"persisted {len(results)} load(s) -> {args.db}")
+        store.close()
 
     return 0 if blocking == 0 else 2
 

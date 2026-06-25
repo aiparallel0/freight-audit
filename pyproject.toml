@@ -30,13 +30,37 @@ ocr = [
     "pillow>=9.0",
     "numpy>=1.23",
 ]
+# Real cloud-OCR provider: AWS Textract (AnalyzeExpense + AnalyzeDocument QUERIES).
+# Credentials come from the standard AWS environment, never from source.
+textract = [
+    "boto3>=1.26",
+]
+# Synthetic, PII-free freight document generation (rendering needs Pillow).
+synth = [
+    "pillow>=9.0",
+]
+# REST API (FastAPI app in freight_audit.api) + Stripe billing.
+api = [
+    "fastapi>=0.110",
+    "uvicorn>=0.23",
+    "python-multipart>=0.0.6",
+    "stripe>=7",
+]
+# Postgres storage backend (config-switchable via DATABASE_URL).
+postgres = [
+    "psycopg[binary]>=3.1",
+]
 dev = [
     "pytest>=7.0",
+    "httpx>=0.24",
 ]
 
 [project.scripts]
 freight-audit = "freight_audit.cli:main"
 freight-audit-ocr = "freight_audit.ocr.cli:main"
+freight-audit-synth = "freight_audit.synth.cli:main"
+freight-audit-pipeline = "freight_audit.pipeline:main"
+freight-audit-vocab = "freight_audit.vocab_cli:main"
 
 [project.urls]
 Homepage = "https://github.com/your-org/freight-audit"

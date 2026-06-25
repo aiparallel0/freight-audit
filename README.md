@@ -1,171 +1,75 @@
-# freight-audit
+# freight-audit — UI + backend handoff
 
-Audit freight **carrier invoices** against the **rate confirmation** and **proof
-of delivery**, and catch the money problems before you pay:
+Everything built for the web console and the path to a live deployment. Drop these
+into the `freight-audit` repo at the locations below.
 
-- overcharges vs the agreed rate
-- unauthorized or over-cap accessorials
-- duplicate line items
-- detention that's billed but the POD can't substantiate
-- **the reverse** — detention the POD *proves* but the carrier never billed
-  (revenue that's owed and silently left uncollected)
-
-Plus an optional **OCR pipeline** that turns a document photo into structured,
-self-validated data, so the audit can run on scanned paperwork rather than
-hand-keyed JSON.
-
-> Status: this is a correct, tested **engine + OCR pipeline** (37 passing tests),
-> not a turnkey SaaS. The matching logic and OCR are real; the per-client work
-> (a specific carrier's worst scans, a specific live TMS endpoint, full
-> multi-tenant auth) is deliberately left as configuration or a one-method swap.
-> See [`docs/STATUS.md`](docs/STATUS.md) for the exact line.
-
----
-
-## Install
-
-```bash
-# core engine only
-pip install -e .
-
-# with the OCR pipeline (also needs the system `tesseract` binary, v5+)
-pip install -e ".[ocr]"
-
-# for development (adds pytest)
-pip install -e ".[ocr,dev]"
-```
-
-Python 3.10+. The only hard dependency is `rapidfuzz`; OCR pulls in
-`pytesseract`, `opencv-python-headless`, `pillow`, and `numpy`.
-
-On Debian/Ubuntu the Tesseract binary is: `sudo apt-get install tesseract-ocr`.
-
----
-
-## Quick start
-
-### Audit the bundled sample loads
-
-```bash
-freight-audit
-```
-
-You'll see it flag overcharges, an unauthorized accessorial, unprovable detention,
-and a load where the POD proves a long wait but **no detention was billed**.
-
-### Audit your own load bundles
-
-A "load bundle" is a JSON file with optional `rate_confirmation`, `invoice`, and
-`pod` keys (see [`samples/loads/`](samples/loads/) for the shape):
-
-```bash
-freight-audit path/to/load_*.json
-freight-audit path/to/loads/ --export quickbooks_iif --export-out bills.iif
-freight-audit path/to/loads/ --json results.json
-```
-
-### Apply a client's business rules
-
-```bash
-freight-audit samples/loads/*.json --profile samples/profiles/client_example.json
-```
-
-A profile expresses tolerances, a fuel-surcharge formula, accessorial caps, and
-disallowed accessorials as JSON — onboarding a client is writing a profile, not
-editing the engine.
-
-### Run the OCR pipeline on a document image
-
-```bash
-# bring your own image — none is bundled
-freight-audit-ocr path/to/receipt.jpg
-freight-audit-ocr path/to/invoice.png --layout tabular_invoice --json out.json
-```
-
----
-
-## Use it as a library
-
-```python
-from freight_audit import process_load, MatchEngine, ClientProfile
-
-# from JSON dicts (the default JsonFixtureProvider extracts them)
-result = process_load(rate_con_dict, invoice_dict, pod_dict)
-print(result.severity, result.net_money_impact_cents)
-for f in result.findings:
-    print(f.type.value, f.message, f.money_impact_cents)
-
-# with a client profile
-profile = ClientProfile.load("samples/profiles/client_example.json")
-result = process_load(rc, inv, pod, profile=profile)
-```
-
-OCR:
-
-```python
-from freight_audit.ocr import extract_receipt, validate
-
-receipt = extract_receipt("receipt.jpg")          # photo -> structured Receipt
-result = validate(receipt)                          # self-consistency checks
-print(result.confident, result.severity)            # CONFIDENT vs NEEDS-REVIEW
-```
-
----
-
-## Architecture
+## What's here
 
 ```
-photo ─▶ OCR ─▶ noisy text ─▶ layout-driven field mapping ─▶ structured docs
-                                                                    │
-rate confirmation ┐                                                 ▼
-carrier invoice   ├─▶ normalize accessorials ─▶ matching rules ─▶ findings
-proof of delivery ┘        (data-driven vocab)   (+ client profile)   │
-                                                                      ▼
-                                          exporters: CSV · QuickBooks IIF · TMS JSON
+review_ui/                 → the audit console (static front-end)
+  console.dc.html          the app (queue, load detail, OCR review, rules, admin,
+                           build-status, deployment-config; funnel: landing → pricing
+                           → register → app)
+  support.js               front-end runtime (required by console.dc.html)
+  engine.js                faithful JS port of match.py + normalize.py (runs offline)
+  freight_samples.js       the repo's 5 sample loads, embedded for the in-browser run
+  findings.json            engine output on those samples (what `freight-audit --json` emits)
+  deploy.config.js         THE single switchboard: every external is one variable
+api/
+  app.py                   FastAPI scaffold wrapping process_load() in the UI's contract
+BACKEND.md                 full plan to build the backend services (Phases 1–6)
 ```
 
-| Module | Responsibility |
-|---|---|
-| `models.py` | data structures; money stored as **integer cents** (never floats) |
-| `match.py` | the audit rules + integrity guards (load-ID mismatch, bad POD timing) |
-| `normalize.py` + `vocab_loader.py` | map free-text charge descriptions to canonical accessorial categories (data-driven, client-extensible) |
-| `profiles.py` | per-client business rules as JSON config (fuel formula, caps, tolerances) |
-| `extract.py` | the OCR/extraction **provider seam** — offline JSON works now; Textract / Google Document AI / Veryfi are stubbed adapters |
-| `exporters.py` | output adapters behind a registry |
-| `store.py` | optional SQLite persistence + append-only audit log |
-| `security.py` | optional API-key gate scaffold |
-| `ocr/` | the OCR pipeline: preprocess → Tesseract → parse → validate → verdict |
+## Where it goes in the repo
 
-The OCR step is isolated behind `ocr.extract.ocr_image`, so swapping Tesseract for
-a cloud OCR API is one method body — the parser, validator, and tests don't change.
+- `review_ui/*`  → replaces/extends `src/freight_audit/review_ui/` (the richer console).
+- `api/app.py`   → new `api/` package at repo root.
+- `BACKEND.md`   → repo root (alongside README.md / STATUS.md).
 
----
+## Run the console (offline, 100% functional today)
 
-## Develop
+It's static — serve the folder and open it:
 
-```bash
-pip install -e ".[ocr,dev]"
-pytest                      # 37 tests
+```
+cd review_ui && python -m http.server 8080   # then open http://localhost:8080/console.dc.html
 ```
 
-Working on this with **Claude Code**? Start with [`CLAUDE.md`](CLAUDE.md) (project
-context) and [`docs/PROMPTS.md`](docs/PROMPTS.md) (ready-to-paste tasks for
-extending it — wiring real OCR, adding a client profile, building an API, etc.).
+With everything blank in `deploy.config.js`, it runs the **ported engine in-browser on
+the repo's 5 real sample loads**. No backend needed.
 
----
+## Connect it to the real engine (three levels, one variable each)
 
-## A note on the sample data
+In `review_ui/deploy.config.js`:
 
-Everything bundled is **synthetic**. The sample loads are invented; the OCR test
-fixture is a generated receipt image with made-up merchant and line items
-([`tests/fixtures/make_sample_receipt.py`](tests/fixtures/make_sample_receipt.py)).
-No real company, person, invoice, or contact information ships in this repo.
+1. **Real Python output (no server):** from the repo run
+   `freight-audit samples/loads/*.json --json review_ui/findings.json`, then set
+   `FINDINGS_URL: "findings.json"`. The UI now shows the actual CLI engine output.
+2. **Live API:** run the backend (below) and set `API_BASE_URL: "http://localhost:8000"`.
+   The queue, decisions, and exports hit the server.
+3. Each remaining capability (DB, OCR, QuickBooks, TMS, Stripe, auth) switches on by
+   setting its variable once the matching service exists — see BACKEND.md.
 
-Real client documents and any prospect/contact data should live in a local,
-git-ignored `private/` folder — never in the repo. See `.gitignore`.
+Precedence the UI follows: `API_BASE_URL` → `FINDINGS_URL` → in-browser ported engine.
 
----
+## Run the backend scaffold
 
-## License
+```
+pip install -e ".[ocr,dev]" fastapi uvicorn
+uvicorn api.app:app --reload     # serves GET /findings etc. on :8000
+```
 
-MIT — see [`LICENSE`](LICENSE).
+`api/app.py` wraps the existing `process_load()` and returns the exact `findings.json`
+shape the front-end consumes — so pointing `API_BASE_URL` at it requires no UI change.
+The `# TODO` markers map 1:1 to BACKEND.md phases (persistence, OCR, exporters, auth).
+
+## The one rule
+
+Never change the contract in BACKEND.md §0 (the routes + the `findings.json` shape).
+The front-end is done and conforms to it; each backend service is built to match it.
+
+## Note on engine.js
+
+`engine.js` is a behaviour-faithful JS port of `match.py` + `normalize.py`, used so the
+console works fully offline. It is validated against the five sample scenarios. Once the
+API is live it becomes optional (the server runs the real Python); keep them in sync, or
+delete `engine.js` and always read from the API/`findings.json`.

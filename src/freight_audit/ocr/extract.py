@@ -78,15 +78,20 @@ _MONEY_RE = re.compile(r"(-?\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})|-?\d+[.,]\d{2}|-?
 
 def parse_money(token: str) -> Optional[float]:
     """Repair OCR money noise: '33,92' -> 33.92, '1.234,56' tolerated, 'RM§0.00'.
-    Returns dollars/ringgit as float, or None."""
+    Handles negatives written as a leading/trailing '-' or in (parentheses) --
+    common on freight credits/adjustments. Returns dollars/ringgit as float, or None."""
     if token is None:
         return None
     t = token.strip()
+    neg = t.startswith("(") and t.endswith(")")     # accounting-style negative
     # common OCR letter->digit fixes inside numbers
     t = (t.replace("§", "5").replace("O", "0").replace("o", "0")
            .replace("l", "1").replace("I", "1").replace("S", "5").replace("B", "8"))
     t = re.sub(r"[^\d.,\-]", "", t)
-    if not t or t in {"-", ".", ","}:
+    if t.startswith("-") or t.endswith("-"):
+        neg = True
+    t = t.replace("-", "")
+    if not t or t in {".", ","}:
         return None
     # if both separators present, the last one is the decimal
     if "," in t and "." in t:
@@ -101,9 +106,10 @@ def parse_money(token: str) -> Optional[float]:
         else:
             t = t.replace(",", "")
     try:
-        return round(float(t), 2)
+        val = round(float(t), 2)
     except ValueError:
         return None
+    return -val if neg else val
 
 
 def _find_amount_after(label_variants, text) -> Optional[float]:

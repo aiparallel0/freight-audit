@@ -1,5 +1,15 @@
 # STATUS — what is and isn't ready
 
+**Update:** the **entire technical roadmap (`docs/PROMPTS.md` #1–#7) is now
+implemented and tested** — real OCR (Tesseract + AWS Textract), the image→audit
+pipeline, a FastAPI REST API with multi-tenant auth + persistence, vocabulary
+curation, TMS write-back, hardened detention/accessorial rules, plus a synthetic
+document generator + OCR accuracy benchmark, a usage/billing scaffold, Docker, and
+CI (97 tests). What remains is **not code**: lead generation, a marketing site, a
+self-serve signup funnel, live payment processing, and production hosting/secrets —
+each needs an external account or a business decision, not a commit. The original
+assessment below is kept for history.
+
 Straight answer to "is it 100% ready?": **No — and no honest version of this could
 be, because the missing 20% is work that only exists once you have a real client.**
 Here is exactly where the line is, so you're never surprised.

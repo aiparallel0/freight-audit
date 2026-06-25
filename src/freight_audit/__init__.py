@@ -23,6 +23,9 @@ from .normalize import normalize_category, set_vocabulary
 from .vocab_loader import Vocabulary
 from .profiles import ClientProfile, FuelRule, apply_profile_rules
 from .exporters import EXPORTERS, EXPORTER_EXT, export
+from .reporting import (
+    aggregate, report_from_results, report_from_store, format_report,
+)
 
 __version__ = "0.1.0"
 
@@ -62,4 +65,5 @@ __all__ = [
     "normalize_category", "set_vocabulary", "Vocabulary",
     "ClientProfile", "FuelRule", "apply_profile_rules",
     "EXPORTERS", "EXPORTER_EXT", "export",
+    "aggregate", "report_from_results", "report_from_store", "format_report",
 ]

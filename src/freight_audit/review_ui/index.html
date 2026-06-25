@@ -193,10 +193,11 @@
 </footer>
 
 <script>
-/* The console loads findings.json (produced by `python run.py --json`). It never
-   talks to an OCR API itself — it just renders what the engine decided and
-   records the reviewer's call. Decisions stay in memory (no server needed for
-   the demo); Export hands back a CSV to push into their TMS/accounting. */
+/* The console loads findings.json (produced by `freight-audit <loads> --json`).
+   It never talks to an OCR API itself — it just renders what the engine decided
+   and records the reviewer's call. Decisions stay in memory; Export hands back a
+   CSV that `freight-audit --import-decisions <csv> --db <db>` ingests into the
+   store's audit log, closing the review loop without a server. */
 const fmt = c => (c < 0 ? "-" : "") + "$" + Math.abs(Math.trunc(c/100)).toLocaleString()
                   + "." + String(Math.abs(c)%100).padStart(2,"0");
 const SEV_LABEL = { ok:"clean", info:"info", warn:"review", block:"hold" };
@@ -212,7 +213,7 @@ async function load() {
     document.getElementById("loaderr").style.display = "block";
     document.getElementById("loaderr").textContent =
       "Could not load findings.json (" + e.message + "). Generate it with: "
-      + "python run.py --json review_ui/findings.json — then serve this folder "
+      + "freight-audit <loads> --json findings.json — then serve this folder "
       + "(python -m http.server) and reload.";
     return;
   }

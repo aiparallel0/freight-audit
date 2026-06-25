@@ -1,0 +1,28 @@
+{
+  "rules": [
+    {
+      "name": "high_error_rate",
+      "metric": "error_rate",
+      "op": ">",
+      "threshold": 0.05,
+      "severity": "page",
+      "channel": "slack"
+    },
+    {
+      "name": "latency_slo_breach",
+      "metric": "latency_avg_ms",
+      "op": ">",
+      "threshold": 1000,
+      "severity": "warn",
+      "channel": "slack"
+    },
+    {
+      "name": "traffic_spike",
+      "metric": "count",
+      "op": ">",
+      "threshold": 100000,
+      "severity": "warn",
+      "channel": "webhook"
+    }
+  ]
+}

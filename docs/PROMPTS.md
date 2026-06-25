@@ -8,6 +8,13 @@ optional, vocabulary/rules/layouts are data not code, and no real data in the re
 
 Run `pytest` after every task; all existing tests must stay green.
 
+> **Status (implemented):** all seven tasks below are now built and tested —
+> #1 AWS Textract, #2 image→audit pipeline, #3 REST API, #4 vocab curation,
+> #5 TMS write-back, #6 rule hardening, #7 multi-tenant auth — plus a synthetic
+> document generator + OCR accuracy benchmark, a usage/billing scaffold, Docker,
+> and CI (97 tests). Remaining gaps are non-code: lead generation, a marketing
+> site, a signup funnel, live payment processing, and production hosting.
+
 ---
 
 ## 1. Wire a real cloud-OCR provider (highest value)

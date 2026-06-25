@@ -1,0 +1,61 @@
+{
+  "load_id": "L-742868",
+  "rate_confirmation": {
+    "load_id": "L-742868",
+    "broker_name": "Keystone Freight Brokers LLC",
+    "carrier_name": "Blue Ridge Trucking Co",
+    "origin": "Atlanta, GA",
+    "destination": "Tampa, FL",
+    "agreed_total": "$2,655.00",
+    "pickup_date": "2026-08-06",
+    "free_time_hours": 2.0,
+    "line_items": [
+      {
+        "description": "Linehaul",
+        "amount": "$2,250.00"
+      },
+      {
+        "description": "Fuel Surcharge",
+        "amount": "$405.00"
+      },
+      {
+        "description": "Detention",
+        "amount": "$0.00",
+        "rate": "$75.00"
+      }
+    ],
+    "approved_accessorials": {
+      "detention": null
+    }
+  },
+  "invoice": {
+    "invoice_number": "BR-3934",
+    "load_id": "L-742868",
+    "carrier_name": "Blue Ridge Trucking Co",
+    "billed_total": "$2,880.00",
+    "invoice_date": "2026-08-08",
+    "line_items": [
+      {
+        "description": "Linehaul",
+        "amount": "$2,250.00"
+      },
+      {
+        "description": "Fuel Surcharge",
+        "amount": "$405.00"
+      },
+      {
+        "description": "Detention (3 hrs)",
+        "amount": "$225.00",
+        "quantity": 3.0,
+        "rate": "$75.00"
+      }
+    ]
+  },
+  "pod": {
+    "load_id": "L-742868",
+    "delivered": true,
+    "arrival_time": "2026-08-06 06:30",
+    "departure_time": "2026-08-06 11:30",
+    "signed_by": "R. Patel"
+  }
+}

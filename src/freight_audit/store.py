@@ -1,22 +1,15 @@
 """
-Persistence + audit log (improves "not ready" item #7).
+Persistence + audit log + multi-tenant scoping (item #7).
 
-This is the *minimum viable* hardening a real pilot actually needs -- not a full
-production platform (that's still premature), but the two pieces you can't run a
-money-touching pilot without:
+Durable storage of every processed load and its findings, plus an append-only
+AUDIT LOG of who did what -- and rows are scoped by tenant so one customer can
+never read another's data. Backed by SQLite (zero-config, single file); the schema
+maps cleanly to Postgres later.
 
-  1. Durable storage of every processed load and its findings (so results survive
-     a restart and you can report on them).
-  2. An append-only AUDIT LOG of who did what (processed a load, approved/disputed
-     an invoice) -- because you're making pay/don't-pay decisions on someone's
-     money, and "who approved this and when" must be answerable.
-
-Backed by SQLite (zero-config, single file, ships with Python). Same schema maps
-cleanly to Postgres later. No server, no ORM, no dependencies.
-
-Deliberately NOT included (still premature pre-revenue, per STATUS.md): multi-tenant
-auth, role management, web server, queues, horizontal scale. A simple API-key gate
-is provided in security.py as scaffolding only.
+Tenancy: every row carries a tenant_id (default "default" for single-tenant use).
+A legacy single-tenant database is migrated in place on open -- the loads table is
+recreated with a composite (tenant_id, load_id) primary key and existing rows are
+assigned tenant_id "default"; decisions/audit_log gain a tenant_id column.
 """
 from __future__ import annotations
 
@@ -29,16 +22,19 @@ from typing import Optional
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS loads (
-    load_id        TEXT PRIMARY KEY,
+    tenant_id      TEXT NOT NULL DEFAULT 'default',
+    load_id        TEXT NOT NULL,
     client         TEXT,
     severity       TEXT,
     auto_approvable INTEGER,
     net_impact_cents INTEGER,
     findings_json  TEXT,
-    processed_at   TEXT NOT NULL
+    processed_at   TEXT NOT NULL,
+    PRIMARY KEY (tenant_id, load_id)
 );
 CREATE TABLE IF NOT EXISTS decisions (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id    TEXT NOT NULL DEFAULT 'default',
     load_id      TEXT NOT NULL,
     decision     TEXT NOT NULL,          -- 'approved' | 'disputed'
     actor        TEXT NOT NULL,
@@ -47,11 +43,27 @@ CREATE TABLE IF NOT EXISTS decisions (
 );
 CREATE TABLE IF NOT EXISTS audit_log (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id TEXT NOT NULL DEFAULT 'default',
     ts        TEXT NOT NULL,
     actor     TEXT NOT NULL,
     action    TEXT NOT NULL,
     load_id   TEXT,
     detail    TEXT
+);
+CREATE TABLE IF NOT EXISTS usage (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id         TEXT NOT NULL DEFAULT 'default',
+    load_id           TEXT,
+    overpay_cents     INTEGER NOT NULL DEFAULT 0,
+    recoverable_cents INTEGER NOT NULL DEFAULT 0,
+    ts                TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS bundles (
+    tenant_id   TEXT NOT NULL DEFAULT 'default',
+    load_id     TEXT NOT NULL,
+    bundle_json TEXT NOT NULL,
+    received_at TEXT NOT NULL,
+    PRIMARY KEY (tenant_id, load_id)
 );
 """
 
@@ -61,35 +73,76 @@ def _now() -> str:
 
 
 class Store:
-    """Thin durable store + audit log over SQLite."""
+    """Durable, tenant-scoped store + audit log over SQLite."""
 
     def __init__(self, path: str = "freight_audit.db"):
         self.path = path
         self.conn = sqlite3.connect(path)
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(_SCHEMA)
+        self._migrate()
+        self.conn.commit()
+
+    # -- migration ---------------------------------------------------------
+    def _has_column(self, table: str, column: str) -> bool:
+        rows = self.conn.execute(f"PRAGMA table_info({table})").fetchall()
+        return any(r["name"] == column for r in rows)
+
+    def _migrate(self) -> None:
+        """Bring a legacy single-tenant schema up to the tenant-scoped one."""
+        if not self._has_column("loads", "tenant_id"):
+            # recreate loads with a composite (tenant_id, load_id) primary key
+            self.conn.executescript(
+                """
+                CREATE TABLE loads_new (
+                    tenant_id      TEXT NOT NULL DEFAULT 'default',
+                    load_id        TEXT NOT NULL,
+                    client         TEXT,
+                    severity       TEXT,
+                    auto_approvable INTEGER,
+                    net_impact_cents INTEGER,
+                    findings_json  TEXT,
+                    processed_at   TEXT NOT NULL,
+                    PRIMARY KEY (tenant_id, load_id)
+                );
+                INSERT INTO loads_new (tenant_id, load_id, client, severity,
+                    auto_approvable, net_impact_cents, findings_json, processed_at)
+                  SELECT 'default', load_id, client, severity, auto_approvable,
+                    net_impact_cents, findings_json, processed_at FROM loads;
+                DROP TABLE loads;
+                ALTER TABLE loads_new RENAME TO loads;
+                """)
+        for table in ("decisions", "audit_log"):
+            if not self._has_column(table, "tenant_id"):
+                self.conn.execute(
+                    f"ALTER TABLE {table} ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'default'")
         self.conn.commit()
 
     # -- audit -------------------------------------------------------------
     def audit(self, actor: str, action: str, load_id: Optional[str] = None,
-              detail: Optional[str] = None) -> None:
+              detail: Optional[str] = None, tenant_id: str = "default") -> None:
         self.conn.execute(
-            "INSERT INTO audit_log (ts, actor, action, load_id, detail) VALUES (?,?,?,?,?)",
-            (_now(), actor, action, load_id, detail))
+            "INSERT INTO audit_log (tenant_id, ts, actor, action, load_id, detail) "
+            "VALUES (?,?,?,?,?,?)",
+            (tenant_id, _now(), actor, action, load_id, detail))
         self.conn.commit()
 
-    def audit_trail(self, load_id: Optional[str] = None) -> list[dict]:
+    def audit_trail(self, load_id: Optional[str] = None,
+                    tenant_id: str = "default") -> list[dict]:
         if load_id:
             cur = self.conn.execute(
-                "SELECT * FROM audit_log WHERE load_id=? ORDER BY id", (load_id,))
+                "SELECT * FROM audit_log WHERE tenant_id=? AND load_id=? ORDER BY id",
+                (tenant_id, load_id))
         else:
-            cur = self.conn.execute("SELECT * FROM audit_log ORDER BY id")
+            cur = self.conn.execute(
+                "SELECT * FROM audit_log WHERE tenant_id=? ORDER BY id", (tenant_id,))
         return [dict(r) for r in cur.fetchall()]
 
     # -- loads -------------------------------------------------------------
-    def save_result(self, result, client: str = "default", actor: str = "system") -> None:
-        """Persist a MatchResult (duck-typed: needs load_id, severity, findings,
-        auto_approvable, net_money_impact_cents)."""
+    def save_result(self, result, client: str = "default", actor: str = "system",
+                    tenant_id: str = "default") -> None:
+        """Persist a MatchResult under a tenant (duck-typed: needs load_id, severity,
+        findings, auto_approvable, net_money_impact_cents)."""
         findings = [
             {"type": getattr(f.type, "value", str(f.type)),
              "severity": getattr(f.severity, "value", str(f.severity)),
@@ -97,57 +150,100 @@ class Store:
             for f in result.findings
         ]
         self.conn.execute(
-            """INSERT INTO loads (load_id, client, severity, auto_approvable,
+            """INSERT INTO loads (tenant_id, load_id, client, severity, auto_approvable,
                    net_impact_cents, findings_json, processed_at)
-               VALUES (?,?,?,?,?,?,?)
-               ON CONFLICT(load_id) DO UPDATE SET
+               VALUES (?,?,?,?,?,?,?,?)
+               ON CONFLICT(tenant_id, load_id) DO UPDATE SET
                    client=excluded.client, severity=excluded.severity,
                    auto_approvable=excluded.auto_approvable,
                    net_impact_cents=excluded.net_impact_cents,
                    findings_json=excluded.findings_json,
                    processed_at=excluded.processed_at""",
-            (result.load_id, client, getattr(result.severity, "value", str(result.severity)),
+            (tenant_id, result.load_id, client,
+             getattr(result.severity, "value", str(result.severity)),
              int(result.auto_approvable), result.net_money_impact_cents,
              json.dumps(findings), _now()))
         self.conn.commit()
         self.audit(actor, "process_load", result.load_id,
                    f"severity={getattr(result.severity,'value',result.severity)} "
-                   f"net={result.net_money_impact_cents}")
+                   f"net={result.net_money_impact_cents}", tenant_id=tenant_id)
 
-    def get_load(self, load_id: str) -> Optional[dict]:
-        cur = self.conn.execute("SELECT * FROM loads WHERE load_id=?", (load_id,))
+    def get_load(self, load_id: str, tenant_id: str = "default") -> Optional[dict]:
+        cur = self.conn.execute(
+            "SELECT * FROM loads WHERE tenant_id=? AND load_id=?", (tenant_id, load_id))
         row = cur.fetchone()
         return dict(row) if row else None
 
-    def all_loads(self) -> list[dict]:
-        cur = self.conn.execute("SELECT * FROM loads ORDER BY processed_at DESC")
+    def all_loads(self, tenant_id: str = "default") -> list[dict]:
+        cur = self.conn.execute(
+            "SELECT * FROM loads WHERE tenant_id=? ORDER BY processed_at DESC", (tenant_id,))
         return [dict(r) for r in cur.fetchall()]
 
     # -- decisions ---------------------------------------------------------
     def record_decision(self, load_id: str, decision: str, actor: str,
-                         note: Optional[str] = None) -> None:
+                        note: Optional[str] = None, tenant_id: str = "default") -> None:
         if decision not in ("approved", "disputed"):
             raise ValueError("decision must be 'approved' or 'disputed'")
         self.conn.execute(
-            "INSERT INTO decisions (load_id, decision, actor, decided_at, note) VALUES (?,?,?,?,?)",
-            (load_id, decision, actor, _now(), note))
+            "INSERT INTO decisions (tenant_id, load_id, decision, actor, decided_at, note) "
+            "VALUES (?,?,?,?,?,?)",
+            (tenant_id, load_id, decision, actor, _now(), note))
         self.conn.commit()
-        self.audit(actor, f"decision:{decision}", load_id, note)
+        self.audit(actor, f"decision:{decision}", load_id, note, tenant_id=tenant_id)
 
-    def decisions_for(self, load_id: str) -> list[dict]:
+    def decisions_for(self, load_id: str, tenant_id: str = "default") -> list[dict]:
         cur = self.conn.execute(
-            "SELECT * FROM decisions WHERE load_id=? ORDER BY id", (load_id,))
+            "SELECT * FROM decisions WHERE tenant_id=? AND load_id=? ORDER BY id",
+            (tenant_id, load_id))
         return [dict(r) for r in cur.fetchall()]
 
-    def summary(self) -> dict:
-        loads = self.all_loads()
-        decided = self.conn.execute("SELECT COUNT(DISTINCT load_id) c FROM decisions").fetchone()["c"]
+    # -- usage / metering --------------------------------------------------
+    def record_usage(self, tenant_id: str, load_id: Optional[str],
+                     overpay_cents: int = 0, recoverable_cents: int = 0) -> None:
+        """Record one billable audit event (value surfaced) for a tenant."""
+        self.conn.execute(
+            "INSERT INTO usage (tenant_id, load_id, overpay_cents, recoverable_cents, ts) "
+            "VALUES (?,?,?,?,?)",
+            (tenant_id, load_id, int(overpay_cents), int(recoverable_cents), _now()))
+        self.conn.commit()
+
+    def usage_rows(self, tenant_id: str = "default") -> list[dict]:
+        cur = self.conn.execute(
+            "SELECT * FROM usage WHERE tenant_id=? ORDER BY id", (tenant_id,))
+        return [dict(r) for r in cur.fetchall()]
+
+    # -- bundles (the persisted, tenant-scoped audit queue) ----------------
+    def save_bundle(self, tenant_id: str, load_id: str, bundle: dict) -> None:
+        import json as _json
+        self.conn.execute(
+            """INSERT INTO bundles (tenant_id, load_id, bundle_json, received_at)
+               VALUES (?,?,?,?)
+               ON CONFLICT(tenant_id, load_id) DO UPDATE SET
+                   bundle_json=excluded.bundle_json, received_at=excluded.received_at""",
+            (tenant_id, load_id, _json.dumps(bundle), _now()))
+        self.conn.commit()
+
+    def all_bundles(self, tenant_id: str = "default") -> list[dict]:
+        cur = self.conn.execute(
+            "SELECT * FROM bundles WHERE tenant_id=? ORDER BY received_at", (tenant_id,))
+        return [dict(r) for r in cur.fetchall()]
+
+    def summary(self, tenant_id: str = "default") -> dict:
+        loads = self.all_loads(tenant_id)
+        decided = self.conn.execute(
+            "SELECT COUNT(DISTINCT load_id) c FROM decisions WHERE tenant_id=?",
+            (tenant_id,)).fetchone()["c"]
         return {
             "loads": len(loads),
             "auto_approvable": sum(1 for l in loads if l["auto_approvable"]),
             "decided": decided,
-            "audit_events": len(self.audit_trail()),
+            "audit_events": len(self.audit_trail(tenant_id=tenant_id)),
         }
+
+    def report(self, tenant_id: str = "default") -> dict:
+        """Aggregate savings/ROI report over a tenant's persisted loads (reporting.py)."""
+        from .reporting import report_from_store      # lazy import avoids a cycle
+        return report_from_store(self, tenant_id=tenant_id)
 
     def close(self):
         self.conn.close()

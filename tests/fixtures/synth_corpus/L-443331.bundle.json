@@ -1,0 +1,61 @@
+{
+  "load_id": "L-443331",
+  "rate_confirmation": {
+    "load_id": "L-443331",
+    "broker_name": "Meridian Transport Solutions",
+    "carrier_name": "Blue Ridge Trucking Co",
+    "origin": "Houston, TX",
+    "destination": "New Orleans, LA",
+    "agreed_total": "$1,947.00",
+    "pickup_date": "2026-10-06",
+    "free_time_hours": 2.0,
+    "line_items": [
+      {
+        "description": "Linehaul",
+        "amount": "$1,650.00"
+      },
+      {
+        "description": "Fuel Surcharge",
+        "amount": "$297.00"
+      },
+      {
+        "description": "Detention",
+        "amount": "$0.00",
+        "rate": "$75.00"
+      }
+    ],
+    "approved_accessorials": {
+      "detention": null
+    }
+  },
+  "invoice": {
+    "invoice_number": "BR-8362",
+    "load_id": "L-443331",
+    "carrier_name": "Blue Ridge Trucking Co",
+    "billed_total": "$2,097.00",
+    "invoice_date": "2026-10-08",
+    "line_items": [
+      {
+        "description": "Linehaul",
+        "amount": "$1,650.00"
+      },
+      {
+        "description": "Fuel Surcharge",
+        "amount": "$297.00"
+      },
+      {
+        "description": "Detention (2 hrs)",
+        "amount": "$150.00",
+        "quantity": 2.0,
+        "rate": "$75.00"
+      }
+    ]
+  },
+  "pod": {
+    "load_id": "L-443331",
+    "delivered": true,
+    "arrival_time": "2026-10-06 08:45",
+    "departure_time": "2026-10-06 12:45",
+    "signed_by": "M. O'Connor"
+  }
+}
