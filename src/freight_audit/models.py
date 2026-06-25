@@ -173,6 +173,36 @@ class Finding:
         return f"[{self.severity.value.upper()}] {self.type.value}: {self.message} ({cents_to_str(self.money_impact_cents)})"
 
 
+def _doc_to_dict(doc) -> "dict | None":
+    """Serialize a source document dataclass to the front-end's JSON shape
+    (datetimes as ISO strings; integer cents preserved)."""
+    if doc is None:
+        return None
+
+    def _v(x):
+        return x.isoformat() if isinstance(x, datetime) else x
+
+    out: dict = {}
+    for k in ("load_id", "broker_name", "carrier_name", "origin", "destination",
+              "invoice_number", "invoice_date", "delivered", "arrival_time",
+              "departure_time", "signed_by", "free_time_hours"):
+        if hasattr(doc, k):
+            out[k] = _v(getattr(doc, k))
+    for tot in ("agreed_total_cents", "billed_total_cents"):
+        if hasattr(doc, tot):
+            out[tot] = getattr(doc, tot)
+    if hasattr(doc, "line_items"):
+        out["line_items"] = [
+            {"description": li.description, "amount_cents": li.amount_cents,
+             "category": li.category, "rate_cents": li.rate_cents}
+            for li in doc.line_items]
+    if hasattr(doc, "approved_accessorials"):
+        out["approved_accessorials"] = doc.approved_accessorials
+    if hasattr(doc, "time_on_site_hours"):          # POD property
+        out["time_on_site_hours"] = doc.time_on_site_hours
+    return out
+
+
 @dataclass
 class MatchResult:
     load_id: str
@@ -204,3 +234,20 @@ class MatchResult:
         for f in self.findings:
             lines.append("   " + repr(f))
         return "\n".join(lines)
+
+    def to_dict(self) -> dict:
+        """The front-end contract shape (BACKEND.md): findings + the three source
+        documents, money as integer cents. JSON-serializable."""
+        return {
+            "load_id": self.load_id,
+            "severity": self.severity.value,
+            "net_money_impact_cents": self.net_money_impact_cents,
+            "auto_approvable": self.auto_approvable,
+            "findings": [
+                {"type": f.type.value, "severity": f.severity.value,
+                 "message": f.message, "money_impact_cents": f.money_impact_cents}
+                for f in self.findings],
+            "rate_con": _doc_to_dict(self.rate_con),
+            "invoice": _doc_to_dict(self.invoice),
+            "pod": _doc_to_dict(self.pod),
+        }
