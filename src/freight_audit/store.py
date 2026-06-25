@@ -58,6 +58,13 @@ CREATE TABLE IF NOT EXISTS usage (
     recoverable_cents INTEGER NOT NULL DEFAULT 0,
     ts                TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS bundles (
+    tenant_id   TEXT NOT NULL DEFAULT 'default',
+    load_id     TEXT NOT NULL,
+    bundle_json TEXT NOT NULL,
+    received_at TEXT NOT NULL,
+    PRIMARY KEY (tenant_id, load_id)
+);
 """
 
 
@@ -203,6 +210,22 @@ class Store:
     def usage_rows(self, tenant_id: str = "default") -> list[dict]:
         cur = self.conn.execute(
             "SELECT * FROM usage WHERE tenant_id=? ORDER BY id", (tenant_id,))
+        return [dict(r) for r in cur.fetchall()]
+
+    # -- bundles (the persisted, tenant-scoped audit queue) ----------------
+    def save_bundle(self, tenant_id: str, load_id: str, bundle: dict) -> None:
+        import json as _json
+        self.conn.execute(
+            """INSERT INTO bundles (tenant_id, load_id, bundle_json, received_at)
+               VALUES (?,?,?,?)
+               ON CONFLICT(tenant_id, load_id) DO UPDATE SET
+                   bundle_json=excluded.bundle_json, received_at=excluded.received_at""",
+            (tenant_id, load_id, _json.dumps(bundle), _now()))
+        self.conn.commit()
+
+    def all_bundles(self, tenant_id: str = "default") -> list[dict]:
+        cur = self.conn.execute(
+            "SELECT * FROM bundles WHERE tenant_id=? ORDER BY received_at", (tenant_id,))
         return [dict(r) for r in cur.fetchall()]
 
     def summary(self, tenant_id: str = "default") -> dict:

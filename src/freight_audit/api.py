@@ -253,3 +253,5 @@ async def billing_webhook(request: Request) -> dict:
 
 # Register the browser routes (landing / signup / demo / review console) on `app`.
 from . import web  # noqa: E402,F401
+# Register the front-end's frozen contract routes (/findings, /decisions, ...) +/console.
+from . import contract  # noqa: E402,F401

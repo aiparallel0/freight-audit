@@ -48,6 +48,12 @@ _PG_SCHEMA = [
         overpay_cents     BIGINT NOT NULL DEFAULT 0,
         recoverable_cents BIGINT NOT NULL DEFAULT 0,
         ts                TEXT NOT NULL)""",
+    """CREATE TABLE IF NOT EXISTS bundles (
+        tenant_id   TEXT NOT NULL DEFAULT 'default',
+        load_id     TEXT NOT NULL,
+        bundle_json TEXT NOT NULL,
+        received_at TEXT NOT NULL,
+        PRIMARY KEY (tenant_id, load_id))""",
 ]
 
 
@@ -147,6 +153,19 @@ class PostgresStore:
     def usage_rows(self, tenant_id="default"):
         cur = self.conn.execute(
             "SELECT * FROM usage WHERE tenant_id=%s ORDER BY id", (tenant_id,))
+        return [dict(r) for r in cur.fetchall()]
+
+    def save_bundle(self, tenant_id, load_id, bundle):
+        self.conn.execute(
+            """INSERT INTO bundles (tenant_id, load_id, bundle_json, received_at)
+               VALUES (%s,%s,%s,%s)
+               ON CONFLICT (tenant_id, load_id) DO UPDATE SET
+                   bundle_json=excluded.bundle_json, received_at=excluded.received_at""",
+            (tenant_id, load_id, json.dumps(bundle), _now()))
+
+    def all_bundles(self, tenant_id="default"):
+        cur = self.conn.execute(
+            "SELECT * FROM bundles WHERE tenant_id=%s ORDER BY received_at", (tenant_id,))
         return [dict(r) for r in cur.fetchall()]
 
     def summary(self, tenant_id="default"):
