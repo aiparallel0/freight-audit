@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin" />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Archivo','Helvetica Neue',Arial,sans-serif;background:#e3e2db;color:#1a1b1c;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  input,button{font-family:inherit;}
+  ::selection{background:#f7e9d4;}
+</style>
+</helmet>
+
+<header style="display:{{ chrome.publicNav }};align-items:center;gap:8px;padding:15px 40px;background:#1a1b1c;color:#faf9f5;position:sticky;top:0;z-index:50;">
+  <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:18px;font-weight:700;cursor:pointer;" onClick="{{ goLanding }}">freight&#8209;audit</div>
+  <nav style="display:flex;gap:20px;margin-left:26px;">
+    <span style="font-size:14px;color:#b8b6ad;cursor:pointer;" onClick="{{ goLanding }}">Product</span>
+    <span style="font-size:14px;color:#b8b6ad;cursor:pointer;" onClick="{{ goLanding }}">Examples</span>
+    <span style="font-size:14px;color:#b8b6ad;cursor:pointer;" onClick="{{ goLanding }}">FAQ</span>
+    <span style="font-size:14px;color:#b8b6ad;cursor:pointer;" onClick="{{ goPricing }}">Pricing</span>
+  </nav>
+  <div style="flex:1;"></div>
+  <span style="font-size:14px;color:#e7e4dc;cursor:pointer;margin-right:8px;" onClick="{{ goSignin }}">Sign in</span>
+  <button style="font-size:14px;font-weight:600;background:#faf9f5;color:#1a1b1c;border:none;border-radius:3px;padding:9px 18px;cursor:pointer;" onClick="{{ goRegister }}">Get started</button>
+</header>
+
+<div style="display:flex;align-items:stretch;min-height:100vh;">
+  <aside style="display:{{ chrome.appNav }};width:232px;flex-shrink:0;background:#1a1b1c;color:#faf9f5;position:sticky;top:0;align-self:flex-start;height:100vh;flex-direction:column;">
+    <div style="padding:22px 22px 18px;border-bottom:1px solid #3a3a36;">
+      <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:18px;font-weight:700;">freight&#8209;audit</div>
+      <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#928f86;margin-top:4px;">audit worksheet</div>
+    </div>
+    <div style="padding:12px;display:flex;flex-direction:column;gap:2px;">
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="5">
+        <button onClick="{{ n.onClick }}" style="text-align:left;font-size:14px;font-family:inherit;cursor:pointer;border:none;border-radius:3px;padding:10px 13px;background:{{ n.bg }};color:{{ n.fg }};display:flex;align-items:center;gap:11px;">
+          <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;width:16px;color:{{ n.numColor }};">{{ n.num }}</span>{{ n.label }}
+        </button>
+      </sc-for>
+    </div>
+    <div style="flex:1;"></div>
+    <div style="padding:16px 22px;border-top:1px solid #3a3a36;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.08em;color:#928f86;">FORM FA&#8209;210 &middot; REV 2026.06</div>
+  </aside>
+  <aside style="display:{{ chrome.adminNav }};width:232px;flex-shrink:0;background:#111110;color:#faf9f5;position:sticky;top:0;align-self:flex-start;height:100vh;flex-direction:column;">
+    <div style="padding:22px 22px 18px;border-bottom:1px solid #2c2c28;">
+      <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:18px;font-weight:700;">freight&#8209;audit</div>
+      <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#d99a4e;margin-top:4px;">operator console</div>
+    </div>
+    <div style="padding:12px;display:flex;flex-direction:column;gap:2px;">
+      <button onClick="{{ goAdminHome }}" style="text-align:left;font-size:14px;font-family:inherit;cursor:pointer;border:none;border-radius:3px;padding:10px 13px;background:{{ adminTabs.ovBg }};color:{{ adminTabs.ovFg }};">Overview</button>
+      <button onClick="{{ goStatus }}" style="text-align:left;font-size:14px;font-family:inherit;cursor:pointer;border:none;border-radius:3px;padding:10px 13px;background:{{ adminTabs.stBg }};color:{{ adminTabs.stFg }};">Build status</button>
+      <button onClick="{{ goConfig }}" style="text-align:left;font-size:14px;font-family:inherit;cursor:pointer;border:none;border-radius:3px;padding:10px 13px;background:{{ adminTabs.cfBg }};color:{{ adminTabs.cfFg }};">Deployment config</button>
+      <div style="font-size:14px;border-radius:3px;padding:10px 13px;color:#b8b6ad;">Accounts</div>
+      <div style="font-size:14px;border-radius:3px;padding:10px 13px;color:#b8b6ad;">Usage</div>
+      <div style="font-size:14px;border-radius:3px;padding:10px 13px;color:#b8b6ad;">Billing</div>
+    </div>
+    <div style="flex:1;"></div>
+    <div style="padding:16px 22px;border-top:1px solid #2c2c28;"><span style="font-size:13px;color:#e7e4dc;cursor:pointer;" onClick="{{ onSignOut }}">Sign out</span></div>
+  </aside>
+  <main style="flex:1;min-width:0;overflow-x:auto;">
+    <div style="display:{{ chrome.appTop }};align-items:center;gap:14px;padding:13px 30px;background:#faf9f5;border-bottom:1px solid #d7d5cc;position:sticky;top:0;z-index:40;">
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#5b5a52;">{{ account.company }}</span>
+      <span style="font-size:12px;color:#5b5a52;border:1px solid #d7d5cc;border-radius:999px;padding:2px 11px;">{{ account.plan }} plan</span>
+      <div style="flex:1;"></div>
+      <span style="font-size:13px;color:#5b5a52;cursor:pointer;" onClick="{{ onEnterAdmin }}">Admin console</span>
+      <span style="font-size:13px;color:#a02c25;cursor:pointer;" onClick="{{ onSignOut }}">Sign out</span>
+    </div>
+
+<div style="display:{{ disp.landing }};max-width:1340px;margin:0 auto;padding:26px 30px 40px;">
+  <div style="background:#faf9f5;border:1px solid #d7d5cc;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;">
+
+    <div style="padding:16px 40px 0;background:#ecebe5;border-bottom:1px solid #d7d5cc;">
+      <div style="display:flex;align-items:flex-end;gap:14px;padding-bottom:12px;">
+        <div>
+          <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:20px;font-weight:700;letter-spacing:.01em;">freight&#8209;audit</div>
+          <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;color:#5b5a52;margin-top:3px;">freight bill audit worksheet</div>
+        </div>
+        <div style="flex:1;"></div>
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#5b5a52;text-align:right;line-height:1.7;">
+          <div>form fa&#8209;210</div>
+          <div>rev 2026.06</div>
+        </div>
+      </div>
+      <div style="height:3px;border-top:1px solid #1a1b1c;border-bottom:1px solid #1a1b1c;"></div>
+    </div>
+
+    <div style="padding:54px 40px 44px;">
+      <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c6781e;margin-bottom:18px;">Freight invoice audit</div>
+      <h1 style="margin:0;font-size:54px;line-height:1.04;font-weight:800;letter-spacing:-.025em;max-width:900px;text-wrap:balance;">Stop paying freight bills you should be disputing.</h1>
+      <p style="margin:22px 0 0;font-size:19px;line-height:1.55;color:#54534d;max-width:720px;">Every carrier invoice gets reconciled against the rate confirmation and the proof of delivery before a dollar goes out. We catch the overcharges, duplicates, and unauthorized accessorials, and we surface the detention revenue you are quietly owed.</p>
+
+      <div style="display:flex;gap:14px;margin-top:34px;flex-wrap:wrap;">
+        <button style="font-size:16px;font-weight:600;background:#1a1b1c;color:#faf9f5;border:1px solid #1a1b1c;border-radius:2px;padding:13px 26px;cursor:pointer;letter-spacing:.01em;" onClick="{{ goPricing }}">Start free pilot</button>
+        <button style="font-size:16px;font-weight:600;background:transparent;color:#1a1b1c;border:1px solid #1a1b1c;border-radius:2px;padding:13px 26px;cursor:pointer;letter-spacing:.01em;" onClick="{{ goSignin }}">Sign in</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#d7d5cc;border-top:1px solid #d7d5cc;border-bottom:1px solid #d7d5cc;">
+      <div style="background:#faf9f5;padding:30px 40px;">
+        <div style="display:flex;align-items:baseline;gap:10px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#c6781e;display:inline-block;"></span>
+          <div style="font-size:21px;font-weight:700;">Catch the overpayment</div>
+        </div>
+        <p style="margin:12px 0 0 20px;font-size:16px;line-height:1.5;color:#54534d;">Overcharges against the agreed rate, duplicate line items, accessorials over their cap, and detention billed that the POD cannot substantiate. Flagged before the bill is paid, not after.</p>
+      </div>
+      <div style="background:#faf9f5;padding:30px 40px;">
+        <div style="display:flex;align-items:baseline;gap:10px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#0f7368;display:inline-block;"></span>
+          <div style="font-size:21px;font-weight:700;">Recover what you are owed</div>
+        </div>
+        <p style="margin:12px 0 0 20px;font-size:16px;line-height:1.5;color:#54534d;">The reverse case nobody checks: when the POD proves a long wait but the carrier billed no detention, that is your revenue left uncollected. We surface it so you can bill it.</p>
+      </div>
+    </div>
+
+    <div style="padding:40px;">
+      <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:30px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#5b5a52;">How it works</div>
+        <div style="height:1px;flex:1;background:#d7d5cc;"></div>
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:#5b5a52;">three documents, one verdict</div>
+      </div>
+
+      <div style="display:flex;align-items:stretch;gap:14px;">
+
+        <div style="flex:1.15;display:flex;flex-direction:column;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+            <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;font-weight:700;border:1.5px solid #1a1b1c;border-radius:50%;width:23px;height:23px;display:flex;align-items:center;justify-content:center;">1</span>
+            <span style="font-size:17px;font-weight:700;">Documents in</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <div style="display:flex;align-items:center;gap:10px;background:#ecebe5;border:1px solid #d7d5cc;border-left:3px solid #6a6a62;border-radius:2px;padding:9px 12px;">
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.08em;color:#57564f;width:74px;">RATE CON</span>
+              <span style="flex:1;"></span>
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:#5b5a52;">the contract</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;background:#ecebe5;border:1px solid #d7d5cc;border-left:3px solid #6a6a62;border-radius:2px;padding:9px 12px;">
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.08em;color:#57564f;width:74px;">INVOICE</span>
+              <span style="flex:1;"></span>
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:#5b5a52;">the claim</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;background:#ecebe5;border:1px solid #d7d5cc;border-left:3px solid #6a6a62;border-radius:2px;padding:9px 12px;">
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.08em;color:#57564f;width:74px;">POD</span>
+              <span style="flex:1;"></span>
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:#5b5a52;">the evidence</span>
+            </div>
+          </div>
+          <div style="font-size:13.5px;line-height:1.5;color:#54534d;margin-top:13px;">Hand keyed or scanned. OCR turns a photo into structured, self checked data.</div>
+        </div>
+
+        <div style="width:36px;display:flex;align-items:center;justify-content:center;padding-top:18px;">
+          <span style="flex:1;border-top:1.5px dashed #adab9e;"></span>
+          <span style="width:9px;height:9px;border-top:2px solid #1a1b1c;border-right:2px solid #1a1b1c;transform:rotate(45deg);margin-left:-4px;"></span>
+        </div>
+
+        <div style="flex:1;display:flex;flex-direction:column;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+            <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;font-weight:700;border:1.5px solid #1a1b1c;border-radius:50%;width:23px;height:23px;display:flex;align-items:center;justify-content:center;">2</span>
+            <span style="font-size:17px;font-weight:700;">Reconcile</span>
+          </div>
+          <div style="border:1.5px solid #1a1b1c;border-radius:2px;overflow:hidden;">
+            <div style="background:#1a1b1c;color:#faf9f5;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;padding:7px 12px;text-align:center;">match engine</div>
+            <div style="padding:11px 12px;display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><span style="width:7px;height:7px;border-radius:50%;background:#c6781e;"></span><span style="flex:1;color:#54534d;">overcharge</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;color:#c6781e;font-weight:700;">+$180.00</span></div>
+              <div style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><span style="width:7px;height:7px;border-radius:50%;background:#a02c25;"></span><span style="flex:1;color:#54534d;">duplicate line</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;color:#a02c25;font-weight:700;">+$315.00</span></div>
+              <div style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><span style="width:7px;height:7px;border-radius:50%;background:#0f7368;"></span><span style="flex:1;color:#54534d;">detention owed</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;color:#0f7368;font-weight:700;">-$180.00</span></div>
+            </div>
+          </div>
+          <div style="font-size:13.5px;line-height:1.5;color:#54534d;margin-top:13px;">Money tracked to the cent. Every gap becomes a finding with a dollar impact and a severity.</div>
+        </div>
+
+        <div style="width:36px;display:flex;align-items:center;justify-content:center;padding-top:18px;">
+          <span style="flex:1;border-top:1.5px dashed #adab9e;"></span>
+          <span style="width:9px;height:9px;border-top:2px solid #1a1b1c;border-right:2px solid #1a1b1c;transform:rotate(45deg);margin-left:-4px;"></span>
+        </div>
+
+        <div style="flex:1.15;display:flex;flex-direction:column;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+            <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;font-weight:700;border:1.5px solid #1a1b1c;border-radius:50%;width:23px;height:23px;display:flex;align-items:center;justify-content:center;">3</span>
+            <span style="font-size:17px;font-weight:700;">Decisions out</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <div style="display:flex;align-items:center;gap:10px;background:#dde7d6;border:1px solid #c3d2ba;border-radius:2px;padding:9px 12px;">
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.08em;color:#3f6f3a;font-weight:700;width:74px;">APPROVE</span>
+              <span style="flex:1;"></span>
+              <span style="font-size:12px;color:#3f6f3a;">clean, auto</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;background:#f7e9d4;border:1px solid #e4d3b3;border-radius:2px;padding:9px 12px;">
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.08em;color:#c6781e;font-weight:700;width:74px;">DISPUTE</span>
+              <span style="flex:1;"></span>
+              <span style="font-size:12px;color:#c6781e;">held for review</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;background:#1a1b1c;border:1px solid #1a1b1c;border-radius:2px;padding:9px 12px;">
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.08em;color:#faf9f5;font-weight:700;width:74px;">EXPORT</span>
+              <span style="flex:1;"></span>
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:#c6c5bb;">IIF &middot; TMS &middot; CSV</span>
+            </div>
+          </div>
+          <div style="font-size:13.5px;line-height:1.5;color:#54534d;margin-top:13px;">Clean loads clear themselves. The rest land in the queue, then push to your books.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="padding:46px 40px;border-top:1px solid #d7d5cc;background:#faf9f5;">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:48px;flex-wrap:wrap;">
+        <div>
+          <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#5b5a52;margin-bottom:16px;">Found this week</div>
+          <div style="display:flex;align-items:baseline;gap:18px;">
+            <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:62px;font-weight:600;letter-spacing:-.035em;line-height:.82;">$13,050</div>
+            <div style="font-size:14.5px;color:#5b5a52;max-width:185px;line-height:1.45;">recovered across 142 audited loads</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:44px;padding-bottom:4px;">
+          <div>
+            <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:28px;font-weight:600;color:#c6781e;letter-spacing:-.015em;">$9,840</div>
+            <div style="font-size:13px;color:#54534d;margin-top:7px;">Overpayment held</div>
+          </div>
+          <div>
+            <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:28px;font-weight:600;color:#0f7368;letter-spacing:-.015em;">$3,210</div>
+            <div style="font-size:13px;color:#54534d;margin-top:7px;">Revenue recovered</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;height:5px;margin-top:30px;border-radius:3px;overflow:hidden;background:#e3e2db;">
+        <div style="width:75.4%;background:#c6781e;"></div>
+        <div style="width:2px;background:#faf9f5;"></div>
+        <div style="width:24.6%;background:#0f7368;"></div>
+      </div>
+    </div>
+
+    <div style="padding:40px;border-top:1px solid #d7d5cc;">
+      <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:24px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#5b5a52;">What it catches</div>
+        <div style="height:1px;flex:1;background:#d7d5cc;"></div>
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:#5b5a52;">five ways a freight bill goes wrong</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#d7d5cc;border:1px solid #d7d5cc;">
+        <div style="background:#faf9f5;padding:20px 22px;"><div style="font-size:17px;font-weight:700;margin-bottom:7px;">Overcharge vs agreed rate</div><div style="font-size:14px;line-height:1.5;color:#54534d;margin-bottom:12px;">Linehaul billed above the rate confirmation.</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;font-weight:600;color:#c6781e;">+$180.00 caught</div></div>
+        <div style="background:#faf9f5;padding:20px 22px;"><div style="font-size:17px;font-weight:700;margin-bottom:7px;">Duplicate line item</div><div style="font-size:14px;line-height:1.5;color:#54534d;margin-bottom:12px;">The same accessorial billed twice on one invoice.</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;font-weight:600;color:#a02c25;">+$315.00 caught</div></div>
+        <div style="background:#faf9f5;padding:20px 22px;"><div style="font-size:17px;font-weight:700;margin-bottom:7px;">Unauthorized accessorial</div><div style="font-size:14px;line-height:1.5;color:#54534d;margin-bottom:12px;">A liftgate charge never approved on the rate con.</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;font-weight:600;color:#c6781e;">+$90.00 caught</div></div>
+        <div style="background:#faf9f5;padding:20px 22px;"><div style="font-size:17px;font-weight:700;margin-bottom:7px;">Unprovable detention</div><div style="font-size:14px;line-height:1.5;color:#54534d;margin-bottom:12px;">Detention billed that the POD cannot substantiate.</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;font-weight:600;color:#c6781e;">+$225.00 caught</div></div>
+        <div style="background:#faf9f5;padding:20px 22px;"><div style="font-size:17px;font-weight:700;margin-bottom:7px;">Recoverable detention</div><div style="font-size:14px;line-height:1.5;color:#54534d;margin-bottom:12px;">A wait the POD proves but the carrier never billed.</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;font-weight:600;color:#0f7368;">&minus;$180.00 owed to you</div></div>
+        <div style="background:#faf9f5;padding:20px 22px;"><div style="font-size:17px;font-weight:700;margin-bottom:7px;">Integrity hold</div><div style="font-size:14px;line-height:1.5;color:#54534d;margin-bottom:12px;">An invoice whose load ID does not match the POD.</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;font-weight:600;color:#a02c25;">blocked before pay</div></div>
+      </div>
+    </div>
+
+    <div style="padding:40px;border-top:1px solid #d7d5cc;background:#ecebe5;">
+      <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#5b5a52;margin-bottom:24px;">Frequently asked</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px 40px;">
+        <div><div style="font-size:16px;font-weight:700;margin-bottom:7px;">How does the audit actually work?</div><div style="font-size:14px;line-height:1.55;color:#54534d;">Each invoice is reconciled to the cent against the rate confirmation and the proof of delivery. Every gap becomes a finding with a dollar impact and a severity.</div></div>
+        <div><div style="font-size:16px;font-weight:700;margin-bottom:7px;">Do I have to change my TMS?</div><div style="font-size:14px;line-height:1.55;color:#54534d;">No. Decisions export to QuickBooks IIF, a generic TMS JSON payload, or plain CSV, so the audit fits the system you already run.</div></div>
+        <div><div style="font-size:16px;font-weight:700;margin-bottom:7px;">What about scanned paper?</div><div style="font-size:14px;line-height:1.55;color:#54534d;">The OCR pipeline turns a photo into structured data and self checks it. Low confidence fields are routed to a human before they ever reach the audit.</div></div>
+        <div><div style="font-size:16px;font-weight:700;margin-bottom:7px;">How long is onboarding?</div><div style="font-size:14px;line-height:1.55;color:#54534d;">Your tolerances, caps, and fuel formula are a JSON profile, not a code change. Most accounts are auditing real loads within a day.</div></div>
+        <div><div style="font-size:16px;font-weight:700;margin-bottom:7px;">Is my data isolated?</div><div style="font-size:14px;line-height:1.55;color:#54534d;">Every account is scoped to its own data and an append only audit log records who approved what and when. Everything shown here is synthetic.</div></div>
+        <div><div style="font-size:16px;font-weight:700;margin-bottom:7px;">What does it cost?</div><div style="font-size:14px;line-height:1.55;color:#54534d;">A free 30 day pilot, then a flat monthly plan by volume. See pricing for the tiers.</div></div>
+      </div>
+    </div>
+
+    <div style="padding:38px 40px;border-top:1px solid #d7d5cc;display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:26px;font-weight:800;letter-spacing:-.02em;">Start auditing this week.</div>
+        <div style="font-size:15px;color:#54534d;margin-top:6px;">Run your own loads through a free pilot. No change to your TMS.</div>
+      </div>
+      <div style="flex:1;"></div>
+      <button style="font-size:15px;font-weight:600;background:#1a1b1c;color:#faf9f5;border:1px solid #1a1b1c;border-radius:2px;padding:12px 24px;cursor:pointer;" onClick="{{ goPricing }}">See pricing</button>
+      <button style="font-size:15px;font-weight:600;background:transparent;color:#1a1b1c;border:1px solid #1a1b1c;border-radius:2px;padding:12px 24px;cursor:pointer;" onClick="{{ goRegister }}">Create account</button>
+    </div>
+
+    <div style="padding:18px 40px;font-size:13px;color:#5b5a52;border-top:1px solid #d7d5cc;background:#ecebe5;">All figures and loads shown are synthetic sample data. No real carrier, broker, or shipment is represented.</div>
+  </div>
+</div>
+
+
+<div style="display:{{ disp.dashboard }};max-width:1340px;margin:0 auto;padding:26px 30px 40px;">
+  <div style="background:#faf9f5;border:1px solid #d7d5cc;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;">
+
+    <div style="display:flex;align-items:baseline;gap:16px;padding:22px 32px 18px;border-bottom:2px solid #1a1b1c;background:#ecebe5;">
+      <h2 style="margin:0;font-size:21px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">Audit dashboard</h2>
+      <span style="font-size:14px;color:#54534d;">Week of Jun 22, 2026 &middot; 142 loads</span>
+      <div style="flex:1;"></div>
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#54534d;">rolling 7 days</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:#d7d5cc;border-bottom:1px solid #d7d5cc;">
+      <div style="background:#faf9f5;padding:18px 22px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5b5a52;">Loads audited</div>
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:28px;font-weight:700;margin-top:5px;">142</div>
+      </div>
+      <div style="background:#faf9f5;padding:18px 22px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5b5a52;">Auto-approved</div>
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:28px;font-weight:700;margin-top:5px;color:#3f6f3a;">71%</div>
+      </div>
+      <div style="background:#faf9f5;padding:18px 22px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5b5a52;">Needs review</div>
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:28px;font-weight:700;margin-top:5px;">29</div>
+      </div>
+      <div style="background:#faf9f5;padding:18px 22px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5b5a52;">Overpayment caught</div>
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:28px;font-weight:700;margin-top:5px;color:#c6781e;">$9,840.00</div>
+      </div>
+      <div style="background:#faf9f5;padding:18px 22px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5b5a52;">Recoverable revenue</div>
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:28px;font-weight:700;margin-top:5px;color:#0f7368;">$3,210.00</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#d7d5cc;">
+      <div style="background:#faf9f5;padding:24px 32px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#5b5a52;margin-bottom:6px;">Money found by week</div>
+        <div style="display:flex;align-items:flex-end;gap:12px;height:188px;border-bottom:1px solid #d7d5cc;padding-top:14px;">
+          <sc-for list="{{ trend }}" as="t" hint-placeholder-count="8">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:7px;">
+              <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:#54534d;">{{ t.label }}</div>
+              <div style="width:100%;background:#c6781e;border-radius:1px 1px 0 0;height:{{ t.h }}px;"></div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:8px;">
+          <sc-for list="{{ trend }}" as="t" hint-placeholder-count="8">
+            <div style="flex:1;text-align:center;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:#5b5a52;">{{ t.w }}</div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:#faf9f5;padding:24px 32px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#5b5a52;margin-bottom:14px;">Exposure by finding type</div>
+        <div style="display:flex;flex-direction:column;gap:13px;">
+          <sc-for list="{{ findingTypes }}" as="ft" hint-placeholder-count="7">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:14px;margin-bottom:4px;">
+                <span style="color:#1a1b1c;">{{ ft.label }} <span style="color:#5b5a52;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;">&times;{{ ft.n }}</span></span>
+                <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;font-weight:600;color:{{ ft.color }};">{{ ft.amtStr }}</span>
+              </div>
+              <div style="height:6px;background:#ece4d5;border-radius:3px;overflow:hidden;">
+                <div style="height:100%;width:{{ ft.barW }}%;background:{{ ft.color }};border-radius:3px;"></div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:24px 32px;border-top:1px solid #d7d5cc;">
+      <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#5b5a52;margin-bottom:12px;">Top carriers by exposure</div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1.2fr 1fr;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#5b5a52;padding-bottom:8px;border-bottom:1.5px solid #1a1b1c;">
+        <div>Carrier</div><div style="text-align:right;">Loads</div><div style="text-align:right;">Net exposure</div><div style="text-align:right;">Exception rate</div>
+      </div>
+      <sc-for list="{{ carriers }}" as="c" hint-placeholder-count="5">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1.2fr 1fr;align-items:center;padding:11px 0;border-bottom:1px solid #e6e4dc;font-size:15px;">
+          <div style="font-weight:600;">{{ c.name }}</div>
+          <div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;">{{ c.loads }}</div>
+          <div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;font-weight:600;color:{{ c.amtColor }};">{{ c.amtStr }}</div>
+          <div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;color:#54534d;">{{ c.rate }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="padding:22px 32px;border-top:1px solid #d7d5cc;">
+      <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#5b5a52;margin-bottom:12px;">Audit trail, this session</div>
+      <sc-for list="{{ auditLogView }}" as="a" hint-placeholder-count="0">
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid #e6e4dc;font-size:14px;">
+          <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:#5b5a52;">{{ a.at }}</span>
+          <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:700;">{{ a.id }}</span>
+          <span style="color:{{ a.color }};font-weight:600;">{{ a.label }}</span>
+        </div>
+      </sc-for>
+      <sc-if value="{{ noAudit }}" hint-placeholder-val="{{ true }}"><div style="font-size:13.5px;color:#5b5a52;">No decisions yet this session. Approve or flag a load and it is recorded here, append-only, and persists on reload.</div></sc-if>
+    </div>
+  </div>
+</div>
+
+<div style="display:{{ disp.queue }};max-width:1340px;margin:0 auto;padding:26px 30px 40px;">
+  <div style="background:#faf9f5;border:1px solid #d7d5cc;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;">
+
+    <div style="display:flex;align-items:baseline;gap:16px;padding:22px 30px 18px;border-bottom:2px solid #1a1b1c;background:#ecebe5;">
+      <h2 style="margin:0;font-size:21px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">Review queue</h2>
+      <span style="font-size:14px;color:#54534d;">Today's batch &middot; invoice, rate con, POD</span>
+      <div style="flex:1;"></div>
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#54534d;border:1px solid #d7d5cc;background:#faf9f5;padding:5px 11px;">batch fa&#8209;0622 &middot; {{ allCount }} loads</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:#d7d5cc;border-bottom:1px solid #d7d5cc;">
+      <div style="background:#faf9f5;padding:14px 20px;"><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#5b5a52;">Loads</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:22px;font-weight:700;margin-top:3px;">{{ allCount }}</div></div>
+      <div style="background:#faf9f5;padding:14px 20px;"><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#5b5a52;">Auto-approve</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:22px;font-weight:700;margin-top:3px;color:#3f6f3a;">{{ cleanN }}</div></div>
+      <div style="background:#faf9f5;padding:14px 20px;"><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#5b5a52;">Blocking</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:22px;font-weight:700;margin-top:3px;color:#a02c25;">{{ blockN }}</div></div>
+      <div style="background:#faf9f5;padding:14px 20px;"><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#5b5a52;">Overpayment caught</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:22px;font-weight:700;margin-top:3px;color:#c6781e;">{{ totOverStr }}</div></div>
+      <div style="background:#faf9f5;padding:14px 20px;"><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#5b5a52;">Recoverable</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:22px;font-weight:700;margin-top:3px;color:#0f7368;">{{ totRecStr }}</div></div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;padding:11px 30px;background:#dde7d6;border-bottom:1px solid #c3d2ba;">
+      <span style="width:8px;height:8px;border-radius:50%;background:#3f6f3a;"></span>
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:#2f5b2b;">Live &middot; freight-audit engine run in-browser on {{ allCount }} repo sample loads (samples/loads/*.json) &rarr; findings.json</span>
+    </div>
+
+    <div style="padding:16px 30px 6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <sc-for list="{{ filters }}" as="fb" hint-placeholder-count="6">
+        <button style="font-size:13px;cursor:pointer;border:1px solid #d7d5cc;border-radius:2px;padding:7px 14px;letter-spacing:.02em;background:{{ fb.bg }};color:{{ fb.fg }};" onClick="{{ fb.onClick }}">{{ fb.label }}</button>
+      </sc-for>
+      <div style="flex:1;"></div>
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:#5b5a52;">showing {{ shownCount }} / {{ allCount }}</span>
+    </div>
+
+    <div style="padding:10px 30px 22px;display:flex;flex-direction:column;gap:11px;">
+      <sc-for list="{{ loads }}" as="l" hint-placeholder-count="6">
+        <div style="display:grid;grid-template-columns:1fr auto;background:{{ l.rowBg }};border:1px solid #d7d5cc;border-left:5px solid {{ l.sevColor }};border-radius:2px;opacity:{{ l.cardOpacity }};">
+          <div style="padding:16px 20px;min-width:0;cursor:pointer;" onClick="{{ l.select }}">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:18px;font-weight:700;letter-spacing:.02em;">{{ l.id }}</span>
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:2px;font-weight:600;background:{{ l.sevBg }};color:{{ l.sevColor }};">{{ l.sevGlyph }} {{ l.sevLabel }}</span>
+              <sc-if value="{{ l.selected }}" hint-placeholder-val=""><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5b5a52;border:1px solid #d7d5cc;padding:2px 7px;border-radius:2px;">viewing</span></sc-if>
+              <span style="margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:15px;font-weight:700;color:{{ l.impactColor }};">{{ l.impactStr }}</span>
+            </div>
+            <div style="font-size:13.5px;color:#5b5a52;margin-top:5px;">{{ l.carrier }} &nbsp;&middot;&nbsp; {{ l.lane }}</div>
+            <div style="display:flex;flex-direction:column;margin-top:11px;">
+              <sc-for list="{{ l.findings }}" as="f" hint-placeholder-count="1">
+                <div style="font-size:13.5px;color:#54534d;padding:7px 0 7px 16px;position:relative;border-top:1px solid #e6e4dc;">
+                  <span style="position:absolute;left:0;top:13px;width:6px;height:6px;border-radius:50%;background:{{ f.dotColor }};"></span>
+                  <span style="color:#1a1b1c;">{{ f.msg }}</span>
+                  <sc-if value="{{ f.hasAmt }}" hint-placeholder-val="{{ true }}"><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:700;color:{{ f.amtColor }};"> {{ f.amtStr }}</span></sc-if>
+                  <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.05em;color:#8a877e;"> &middot; {{ f.typeCode }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ l.decided }}" hint-placeholder-val=""><div style="font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;margin-top:9px;font-weight:700;color:{{ l.decidedColor }};">{{ l.decidedLabel }}</div></sc-if>
+          </div>
+          <div style="border-left:1px solid #d7d5cc;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:16px;background:#ecebe5;">
+            <button style="font-size:12.5px;cursor:pointer;white-space:nowrap;border:1px solid #1a1b1c;border-radius:2px;padding:8px 16px;background:#1a1b1c;color:#faf9f5;letter-spacing:.03em;font-weight:600;" onClick="{{ l.select }}">Open detail</button>
+            <button style="font-size:12.5px;cursor:pointer;white-space:nowrap;border:1px solid #1a1b1c;border-radius:2px;padding:8px 16px;background:#faf9f5;color:#1a1b1c;letter-spacing:.03em;" onClick="{{ l.approve }}">Approve</button>
+            <button style="font-size:12.5px;cursor:pointer;white-space:nowrap;border:1px solid #b3b1a4;border-radius:2px;padding:8px 16px;background:#faf9f5;color:#54534d;letter-spacing:.03em;" onClick="{{ l.flag }}">Flag</button>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="background:#1a1b1c;color:#faf9f5;padding:13px 30px;display:flex;align-items:center;gap:18px;">
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;">{{ decidedStr }}</span>
+      <div style="flex:1;"></div>
+      <button style="font-size:12.5px;cursor:pointer;background:#faf9f5;color:#1a1b1c;border:none;border-radius:2px;padding:8px 15px;letter-spacing:.03em;font-weight:700;" onClick="{{ onExportCsv }}">Export CSV</button>
+      <button style="font-size:12.5px;cursor:pointer;background:transparent;color:#faf9f5;border:1px solid #6a6a62;border-radius:2px;padding:8px 15px;letter-spacing:.03em;font-weight:700;">QuickBooks IIF</button>
+      <button style="font-size:12.5px;cursor:pointer;background:transparent;color:#faf9f5;border:1px solid #6a6a62;border-radius:2px;padding:8px 15px;letter-spacing:.03em;font-weight:700;">TMS JSON</button>
+      <button style="font-size:12.5px;cursor:pointer;background:transparent;color:#faf9f5;border:1px solid #6a6a62;border-radius:2px;padding:8px 15px;letter-spacing:.03em;font-weight:700;">Exception worklist</button>
+    </div>
+  </div>
+</div>
+
+<div style="display:{{ disp.detail }};max-width:1340px;margin:0 auto;padding:26px 30px 40px;">
+  <div style="background:#faf9f5;border:1px solid #d7d5cc;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;padding:22px 30px;border-bottom:2px solid #1a1b1c;background:#ecebe5;">
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:22px;font-weight:700;letter-spacing:.03em;">{{ detailView.id }}</span>
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:2px;font-weight:600;background:{{ detailView.sevBg }};color:{{ detailView.sevColor }};">{{ detailView.sevGlyph }} {{ detailView.sevLabel }}</span>
+      <span style="font-size:16px;color:#1a1b1c;">{{ detailView.carrier }}</span>
+      <span style="font-size:14px;color:#5b5a52;">{{ detailView.lane }}</span>
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:#5b5a52;">SCAC {{ detailView.scac }} &middot; PRO {{ detailView.pro }}</span>
+      <div style="flex:1;"></div>
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:16px;font-weight:700;color:{{ detailView.impactColor }};">{{ detailView.impactStr }}</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#d7d5cc;">
+
+      <div style="background:#faf9f5;padding:20px 22px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#5b5a52;">Rate confirmation</div>
+        <div style="font-size:12.5px;color:#5b5a52;margin-bottom:14px;">what the broker agreed to pay</div>
+        <div style="font-size:13px;color:#54534d;line-height:1.85;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;"><span>Broker</span><span style="color:#1a1b1c;">{{ detailView.broker }}</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>Free time</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;color:#1a1b1c;">{{ detailView.free }}</span></div>
+        </div>
+        <sc-for list="{{ detailView.rcItems }}" as="it" hint-placeholder-count="3">
+          <div style="display:flex;justify-content:space-between;font-size:14px;padding:8px 0;border-top:1px solid #e6e4dc;color:{{ it.rowColor }};"><span>{{ it.d }}</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;">{{ it.aStr }}</span></div>
+        </sc-for>
+        <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;padding:10px 0 0;border-top:1.5px solid #1a1b1c;margin-top:6px;"><span>Agreed total</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;">{{ detailView.rcTotalStr }}</span></div>
+      </div>
+
+      <div style="background:#faf9f5;padding:20px 22px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#5b5a52;">Carrier invoice</div>
+        <div style="font-size:12.5px;color:#5b5a52;margin-bottom:14px;">what the carrier is billing</div>
+        <div style="font-size:13px;color:#54534d;line-height:1.85;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;"><span>Invoice</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;color:#1a1b1c;">{{ detailView.invNo }}</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>Date</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;color:#1a1b1c;">{{ detailView.invDate }}</span></div>
+        </div>
+        <sc-if value="{{ detailView.hasInvMismatch }}" hint-placeholder-val=""><div style="font-size:12.5px;color:#a02c25;background:#f3dcd8;border-left:3px solid #a02c25;padding:8px 10px;margin-bottom:2px;">{{ detailView.invMismatch }}</div></sc-if>
+        <sc-for list="{{ detailView.invItems }}" as="it" hint-placeholder-count="3">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:8px 10px;margin:0 -10px;border-top:1px solid #e6e4dc;background:{{ it.bg }};border-left:3px solid {{ it.bd }};">
+            <span>{{ it.d }} <sc-if value="{{ it.hasNote }}" hint-placeholder-val=""><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;color:{{ it.fg }};">{{ it.note }}</span></sc-if></span>
+            <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600;color:{{ it.fg }};">{{ it.aStr }}</span>
+          </div>
+        </sc-for>
+        <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;padding:10px 0 0;border-top:1.5px solid #1a1b1c;margin-top:6px;"><span>Billed total</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;">{{ detailView.invTotalStr }}</span></div>
+      </div>
+
+      <div style="background:#faf9f5;padding:20px 22px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#5b5a52;">Proof of delivery</div>
+        <div style="font-size:12.5px;color:#5b5a52;margin-bottom:14px;">evidence the work happened</div>
+        <div style="font-size:14px;color:#54534d;line-height:1.9;">
+          <div style="display:flex;justify-content:space-between;border-top:1px solid #e6e4dc;padding:7px 0;"><span>Delivered</span><span style="color:#3f6f3a;font-weight:600;">{{ detailView.podDelivered }}</span></div>
+          <div style="display:flex;justify-content:space-between;border-top:1px solid #e6e4dc;padding:7px 0;"><span>Arrival</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;">{{ detailView.podArr }}</span></div>
+          <div style="display:flex;justify-content:space-between;border-top:1px solid #e6e4dc;padding:7px 0;"><span>Departure</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;">{{ detailView.podDep }}</span></div>
+          <div style="display:flex;justify-content:space-between;border-top:1px solid #e6e4dc;padding:7px 0;"><span>Time on site</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;">{{ detailView.podOnSite }}</span></div>
+          <div style="display:flex;justify-content:space-between;border-top:1px solid #e6e4dc;padding:7px 0;"><span>Signed by</span><span>{{ detailView.podSigner }}</span></div>
+        </div>
+        <div style="margin-top:14px;font-size:13px;line-height:1.5;color:#54534d;background:{{ detailView.podNoteBg }};border-left:3px solid {{ detailView.podNoteBd }};padding:10px 12px;">{{ detailView.podNote }}</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:1px;background:#d7d5cc;border-top:1px solid #d7d5cc;">
+      <div style="background:#ecebe5;padding:22px 30px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#5b5a52;margin-bottom:12px;">Reconciliation</div>
+        <div style="display:flex;justify-content:space-between;font-size:15px;padding:7px 0;"><span style="color:#54534d;">Agreed (rate con)</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;">{{ detailView.reconAgreedStr }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:15px;padding:7px 0;border-top:1px solid #e6e4dc;"><span style="color:#54534d;">Billed (invoice)</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;">{{ detailView.reconBilledStr }}</span></div>
+        <sc-for list="{{ detailView.reconLines }}" as="ln" hint-placeholder-count="1">
+          <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:7px 0 7px 16px;color:{{ ln.color }};"><span>{{ ln.label }}</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;">{{ ln.aStr }}</span></div>
+        </sc-for>
+        <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:700;padding:11px 0 0;border-top:1.5px solid #1a1b1c;margin-top:6px;"><span>{{ detailView.reconTotalLabel }}</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;color:{{ detailView.reconTotalColor }};">{{ detailView.reconTotalStr }}</span></div>
+      </div>
+      <div style="background:#faf9f5;padding:22px 30px;display:flex;flex-direction:column;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#5b5a52;margin-bottom:12px;">Recommended action</div>
+        <div style="font-size:15px;line-height:1.5;color:#1a1b1c;">{{ detailView.action }}</div>
+        <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+          <button style="font-size:14px;font-weight:600;background:#1a1b1c;color:#faf9f5;border:1px solid #1a1b1c;border-radius:2px;padding:11px 20px;cursor:pointer;" onClick="{{ detailView.onApprove }}">{{ detailView.actPrimary }}</button>
+          <sc-if value="{{ detailView.hasSecondary }}" hint-placeholder-val=""><button style="font-size:14px;font-weight:600;background:transparent;color:#54534d;border:1px solid #b3b1a4;border-radius:2px;padding:11px 20px;cursor:pointer;" onClick="{{ detailView.onDispute }}">{{ detailView.actSecondary }}</button></sc-if>
+        </div>
+        <sc-if value="{{ detailView.decidedNote }}" hint-placeholder-val=""><div style="font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#3f6f3a;margin-top:12px;">{{ detailView.decidedNote }}</div></sc-if>
+        <div style="flex:1;min-height:20px;"></div>
+        <div style="border-top:1px solid #e6e4dc;padding-top:14px;">
+          <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#5b5a52;margin-bottom:9px;">Audit trail</div>
+          <sc-for list="{{ detailView.log }}" as="lg" hint-placeholder-count="2">
+            <div style="display:flex;gap:10px;font-size:12.5px;color:#54534d;padding:3px 0;">
+              <span style="color:#0f7368;">&bull;</span><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;">{{ lg }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="display:{{ disp.ocr }};max-width:1340px;margin:0 auto;padding:26px 30px 40px;">
+  <div style="background:#faf9f5;border:1px solid #d7d5cc;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;">
+
+    <div style="display:flex;align-items:baseline;gap:14px;padding:22px 30px;border-bottom:2px solid #1a1b1c;background:#ecebe5;">
+      <h2 style="margin:0;font-size:21px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">OCR review</h2>
+      <span style="font-size:14px;color:#54534d;">BL-44821.jpg &rarr; structured invoice</span>
+      <div style="flex:1;"></div>
+      <span style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;padding:5px 12px;border-radius:2px;background:{{ ocrVerdict.bg }};color:{{ ocrVerdict.color }};">{{ ocrVerdict.label }}</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1.05fr;gap:1px;background:#d7d5cc;">
+
+      <div style="background:#eae9e2;padding:22px;">
+        <div style="background:repeating-linear-gradient(135deg,#faf9f5,#faf9f5 11px,#eae9e1 11px,#eae9e1 22px);border:1px solid #cdcabf;border-radius:2px;height:440px;position:relative;box-shadow:inset 0 0 0 12px #faf9f5;">
+          <div style="position:absolute;inset:34px 30px;border:1px dashed #b3b1a4;background:rgba(251,247,240,.55);display:flex;flex-direction:column;">
+            <div style="border-bottom:1px solid #d7d5cc;padding:12px 16px;display:flex;justify-content:space-between;align-items:baseline;">
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:700;font-size:15px;color:#3a3a36;">BRIGHTLINE TRANSPORT</span>
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:#5b5a52;">INVOICE</span>
+            </div>
+            <div style="padding:14px 16px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;color:#57564f;line-height:2;">
+              <div>INV BL-44821</div>
+              <div>LOAD L-100482</div>
+              <div>DATE 06/19/2026</div>
+              <div style="height:10px;"></div>
+              <div>LINEHAUL &nbsp;&nbsp;&nbsp; 1,980.00</div>
+              <div style="filter:blur(.6px);opacity:.7;">FUEL SURCHG &nbsp; 3l5.00</div>
+              <div>FUEL SURCHG &nbsp; 315.00</div>
+            </div>
+            <div style="flex:1;"></div>
+            <div style="border-top:1px solid #d7d5cc;padding:10px 16px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;font-weight:700;color:#3a3a36;display:flex;justify-content:space-between;"><span>TOTAL</span><span>2,610.00</span></div>
+          </div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;color:#5b5a52;margin-top:12px;text-align:center;">layout: {{ ocrLayout }} &middot; document confidence {{ ocrConf }}% &middot; tesseract pass</div>
+      </div>
+
+      <div style="background:#faf9f5;padding:22px 26px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#5b5a52;margin-bottom:14px;">Extracted fields &middot; correct anything flagged</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <sc-for list="{{ ocrFields }}" as="o" hint-placeholder-count="8">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                <span style="font-size:12.5px;color:#54534d;letter-spacing:.02em;">{{ o.label }}</span>
+                <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:{{ o.confColor }};">{{ o.confLabel }}</span>
+              </div>
+              <input value="{{ o.value }}" data-k="{{ o.key }}" onChange="{{ o.onInput }}" style="width:100%;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;color:#1a1b1c;padding:9px 11px;border:1px solid {{ o.ring }};background:{{ o.ringBg }};border-radius:2px;outline:none;" />
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:18px;padding:18px 30px;border-top:1px solid #d7d5cc;background:#ecebe5;">
+      <div style="font-size:14px;color:#54534d;line-height:1.4;flex:1;">{{ ocrVerdict.note }}</div>
+      <button style="font-size:14px;font-weight:600;background:transparent;color:#1a1b1c;border:1px solid #1a1b1c;border-radius:2px;padding:11px 20px;cursor:pointer;" onClick="{{ onReRunOcr }}">Re-run OCR</button>
+      <button style="font-size:14px;font-weight:600;background:#1a1b1c;color:#faf9f5;border:1px solid #1a1b1c;border-radius:2px;padding:11px 20px;cursor:pointer;" onClick="{{ onSendOcr }}">Send to audit</button>
+    </div>
+  </div>
+</div>
+
+<div style="display:{{ disp.rules }};max-width:1340px;margin:0 auto;padding:26px 30px 40px;">
+  <div style="background:#faf9f5;border:1px solid #d7d5cc;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;">
+
+    <div style="display:flex;align-items:baseline;gap:14px;padding:22px 30px;border-bottom:2px solid #1a1b1c;background:#ecebe5;">
+      <h2 style="margin:0;font-size:21px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">Rules</h2>
+      <span style="font-size:14px;color:#54534d;">Cardinal Logistics profile</span>
+      <div style="flex:1;"></div>
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#54534d;">onboarding is config, not code</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#d7d5cc;">
+      <div style="background:#faf9f5;padding:24px 30px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#5b5a52;margin-bottom:16px;">Thresholds</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div><div style="font-size:13px;color:#54534d;margin-bottom:5px;">Tolerance (USD)</div><input value="{{ rules.tolerance }}" data-k="tolerance" onChange="{{ onRuleInput }}" style="width:100%;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:15px;padding:9px 11px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" /></div>
+          <div><div style="font-size:13px;color:#54534d;margin-bottom:5px;">Free time (hours)</div><input value="{{ rules.freeTime }}" data-k="freeTime" onChange="{{ onRuleInput }}" style="width:100%;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:15px;padding:9px 11px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" /></div>
+          <div><div style="font-size:13px;color:#54534d;margin-bottom:5px;">Detention rate (USD/hr)</div><input value="{{ rules.detRate }}" data-k="detRate" onChange="{{ onRuleInput }}" style="width:100%;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:15px;padding:9px 11px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" /></div>
+          <div><div style="font-size:13px;color:#54534d;margin-bottom:5px;">Max detention (hours)</div><input value="{{ rules.maxDetention }}" data-k="maxDetention" onChange="{{ onRuleInput }}" style="width:100%;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:15px;padding:9px 11px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" /></div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#5b5a52;margin:24px 0 12px;">Fuel rule</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;background:#ecebe5;border:1px solid #d7d5cc;border-radius:2px;padding:4px 9px;color:#1a1b1c;">pct_of_linehaul</span>
+          <span style="font-size:14px;color:#54534d;">at</span>
+          <input value="{{ rules.fuelPct }}" data-k="fuelPct" onChange="{{ onRuleInput }}" style="width:70px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:15px;padding:9px 11px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" />
+          <span style="font-size:14px;color:#54534d;">% of linehaul, tolerance</span>
+          <input value="{{ rules.fuelTol }}" data-k="fuelTol" onChange="{{ onRuleInput }}" style="width:80px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:15px;padding:9px 11px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" />
+          <span style="font-size:14px;color:#54534d;">USD</span>
+        </div>
+        <div style="font-size:12.5px;color:#5b5a52;margin-top:10px;line-height:1.5;">A flat dollar tolerance is applied to every comparison. Fuel can also be validated per mile.</div>
+      </div>
+
+      <div style="background:#faf9f5;padding:24px 30px;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#5b5a52;margin-bottom:14px;">Accessorial caps</div>
+        <div style="display:grid;grid-template-columns:1fr auto;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:#5b5a52;padding-bottom:7px;border-bottom:1.5px solid #1a1b1c;">
+          <div>Accessorial</div><div>Cap, USD</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #e6e4dc;"><span style="font-size:14px;">Detention, per hour</span><input value="{{ rules.detCap }}" data-k="detCap" onChange="{{ onRuleInput }}" style="width:110px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;padding:7px 10px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;text-align:right;" /></div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #e6e4dc;"><span style="font-size:14px;">Lumper, max</span><input value="{{ rules.lumperCap }}" data-k="lumperCap" onChange="{{ onRuleInput }}" style="width:110px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;padding:7px 10px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;text-align:right;" /></div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #e6e4dc;"><span style="font-size:14px;">Liftgate, max</span><input value="{{ rules.liftgateCap }}" data-k="liftgateCap" onChange="{{ onRuleInput }}" style="width:110px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;padding:7px 10px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;text-align:right;" /></div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #e6e4dc;"><span style="font-size:14px;">Layover, per day</span><input value="{{ rules.layoverCap }}" data-k="layoverCap" onChange="{{ onRuleInput }}" style="width:110px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;padding:7px 10px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;text-align:right;" /></div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #e6e4dc;"><span style="font-size:14px;">Reweigh, max</span><input value="{{ rules.reweighCap }}" data-k="reweighCap" onChange="{{ onRuleInput }}" style="width:110px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;padding:7px 10px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;text-align:right;" /></div>
+
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#5b5a52;margin:22px 0 10px;">Disallowed accessorials</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <span style="font-size:13px;background:#f3dcd8;color:#a02c25;border:1px solid #e6c4bd;border-radius:2px;padding:6px 11px;">TONU after delivery</span>
+          <span style="font-size:13px;background:#f3dcd8;color:#a02c25;border:1px solid #e6c4bd;border-radius:2px;padding:6px 11px;">Driver assist, non-contracted</span>
+          <sc-for list="{{ disallowedExtra }}" as="d" hint-placeholder-count="0">
+            <span style="font-size:13px;background:#f3dcd8;color:#a02c25;border:1px solid #e6c4bd;border-radius:2px;padding:6px 11px;">{{ d }}</span>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <input value="{{ newDisallowed }}" onChange="{{ onNewDisallowedInput }}" placeholder="add a disallowed accessorial" style="flex:1;font-size:13px;padding:8px 11px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" />
+          <button style="font-size:13px;font-weight:600;background:#1a1b1c;color:#faf9f5;border:none;border-radius:2px;padding:8px 16px;cursor:pointer;" onClick="{{ onAddDisallowed }}">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:22px 30px;border-top:1px solid #d7d5cc;">
+      <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#5b5a52;margin-bottom:10px;">Client profile (JSON)</div>
+      <pre style="margin:0;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;line-height:1.6;color:#1a1b1c;background:#ecebe5;border:1px solid #d7d5cc;border-radius:2px;padding:16px 18px;white-space:pre-wrap;overflow:auto;">{{ profileJson }}</pre>
+      <div style="font-size:12.5px;color:#5b5a52;margin-top:10px;">This is the full ClientProfile the engine loads. Onboarding a client is writing this profile, not editing the engine.</div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:14px;padding:18px 30px;border-top:1px solid #d7d5cc;background:#ecebe5;">
+      <span style="font-size:13.5px;color:#54534d;"><sc-if value="{{ previewResult }}" hint-placeholder-val="">{{ previewResult }}</sc-if><sc-if value="{{ previewResult }}" hint-placeholder-val="{{ true }}"></sc-if></span>
+      <div style="flex:1;"></div>
+      <button style="font-size:14px;font-weight:600;background:transparent;color:#1a1b1c;border:1px solid #1a1b1c;border-radius:2px;padding:11px 20px;cursor:pointer;" onClick="{{ onPreviewBatch }}">Preview on batch</button>
+      <button style="font-size:14px;font-weight:600;background:#1a1b1c;color:#faf9f5;border:1px solid #1a1b1c;border-radius:2px;padding:11px 20px;cursor:pointer;" onClick="{{ onSaveRules }}">{{ saveLabel }}</button>
+    </div>
+  </div>
+</div>
+
+
+<div style="display:{{ disp.pricing }};max-width:1340px;margin:0 auto;padding:26px 30px 40px;">
+  <div style="background:#faf9f5;border:1px solid #d7d5cc;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;">
+    <div style="display:flex;align-items:baseline;gap:16px;padding:22px 30px;border-bottom:2px solid #1a1b1c;background:#ecebe5;">
+      <h2 style="margin:0;font-size:21px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;">Pricing</h2>
+      <span style="font-size:14px;color:#54534d;">Free 30 day pilot, then a flat monthly plan by volume</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#d7d5cc;">
+      <div style="background:#faf9f5;padding:28px 26px;display:flex;flex-direction:column;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#5b5a52;">Pilot</div>
+        <div style="display:flex;align-items:baseline;gap:7px;margin:12px 0 3px;"><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:38px;font-weight:700;">$0</span><span style="font-size:14px;color:#5b5a52;">/ first 30 days</span></div>
+        <div style="font-size:13px;color:#5b5a52;margin-bottom:20px;">then $199 / month</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;color:#1a1b1c;">
+          <div>Up to 100 loads / month</div><div>Core audit engine</div><div>CSV export</div><div>Email support</div>
+        </div>
+        <div style="flex:1;min-height:22px;"></div>
+        <button style="font-size:14px;font-weight:600;background:transparent;color:#1a1b1c;border:1px solid #1a1b1c;border-radius:2px;padding:12px 18px;cursor:pointer;" onClick="{{ onPlanPilot }}">Start pilot</button>
+      </div>
+      <div style="background:#faf9f5;padding:0;display:flex;flex-direction:column;">
+        <div style="height:3px;background:#c6781e;"></div>
+        <div style="padding:25px 26px 28px;display:flex;flex-direction:column;flex:1;">
+          <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#c6781e;">Growth &middot; most chosen</div>
+          <div style="display:flex;align-items:baseline;gap:7px;margin:12px 0 3px;"><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:38px;font-weight:700;">$499</span><span style="font-size:14px;color:#5b5a52;">/ month</span></div>
+          <div style="font-size:13px;color:#5b5a52;margin-bottom:20px;">billed monthly</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;color:#1a1b1c;">
+            <div>Up to 2,000 loads / month</div><div>OCR pipeline + human review</div><div>QuickBooks &amp; TMS export</div><div>Client rule profiles</div><div>Priority support</div>
+          </div>
+          <div style="flex:1;min-height:22px;"></div>
+          <button style="font-size:14px;font-weight:600;background:#1a1b1c;color:#faf9f5;border:1px solid #1a1b1c;border-radius:2px;padding:12px 18px;cursor:pointer;" onClick="{{ onPlanGrowth }}">Choose Growth</button>
+        </div>
+      </div>
+      <div style="background:#faf9f5;padding:28px 26px;display:flex;flex-direction:column;">
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#5b5a52;">Enterprise</div>
+        <div style="display:flex;align-items:baseline;gap:7px;margin:12px 0 3px;"><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:38px;font-weight:700;">Custom</span></div>
+        <div style="font-size:13px;color:#5b5a52;margin-bottom:20px;">volume pricing</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;color:#1a1b1c;">
+          <div>Unlimited loads</div><div>SSO and roles</div><div>Live TMS write-back</div><div>Dedicated success manager</div>
+        </div>
+        <div style="flex:1;min-height:22px;"></div>
+        <button style="font-size:14px;font-weight:600;background:transparent;color:#1a1b1c;border:1px solid #1a1b1c;border-radius:2px;padding:12px 18px;cursor:pointer;" onClick="{{ onPlanEnterprise }}">Talk to us</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="display:{{ disp.register }};max-width:760px;margin:0 auto;padding:26px 30px 40px;">
+  <div style="background:#faf9f5;border:1px solid #d7d5cc;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;">
+    <div style="padding:22px 30px;border-bottom:2px solid #1a1b1c;background:#ecebe5;">
+      <h2 style="margin:0;font-size:21px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;">Create your account</h2>
+    </div>
+    <div style="padding:28px 30px;">
+      <div style="font-size:13px;color:#54534d;margin-bottom:20px;">Selected plan <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600;color:#1a1b1c;">{{ regPlan }}</span> &middot; 30 day pilot, no charge today.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div><div style="font-size:13px;color:#54534d;margin-bottom:5px;">Company name</div><input data-k="regCompany" onChange="{{ onRegInput }}" placeholder="Cardinal Logistics" style="width:100%;font-size:14px;padding:10px 12px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" /></div>
+        <div><div style="font-size:13px;color:#54534d;margin-bottom:5px;">Work email</div><input data-k="regEmail" onChange="{{ onRegInput }}" placeholder="ops@company.com" style="width:100%;font-size:14px;padding:10px 12px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" /></div>
+        <div style="grid-column:1 / -1;"><div style="font-size:13px;color:#54534d;margin-bottom:5px;">Password</div><input type="password" placeholder="????????????" style="width:100%;font-size:14px;padding:10px 12px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" /></div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5b5a52;margin:24px 0 12px;">Payment &middot; mock, not charged</div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;">
+        <div><div style="font-size:13px;color:#54534d;margin-bottom:5px;">Card number</div><input placeholder="4242 4242 4242 4242" style="width:100%;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;padding:10px 12px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" /></div>
+        <div><div style="font-size:13px;color:#54534d;margin-bottom:5px;">Expiry</div><input placeholder="08 / 28" style="width:100%;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;padding:10px 12px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" /></div>
+        <div><div style="font-size:13px;color:#54534d;margin-bottom:5px;">CVC</div><input placeholder="123" style="width:100%;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;padding:10px 12px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" /></div>
+      </div>
+      <button style="width:100%;font-size:15px;font-weight:600;background:#1a1b1c;color:#faf9f5;border:1px solid #1a1b1c;border-radius:2px;padding:13px;cursor:pointer;margin-top:24px;" onClick="{{ onRegister }}">Create account and start pilot</button>
+      <div style="display:flex;justify-content:space-between;margin-top:16px;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:13px;color:#54534d;cursor:pointer;" onClick="{{ goSignin }}">Already have an account? Sign in</span>
+        <span style="font-size:13px;color:#5b5a52;cursor:pointer;" onClick="{{ onEnterAdmin }}">Operator? Open the admin console</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="display:{{ disp.signin }};max-width:460px;margin:0 auto;padding:26px 30px 40px;">
+  <div style="background:#faf9f5;border:1px solid #d7d5cc;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;">
+    <div style="padding:22px 30px;border-bottom:2px solid #1a1b1c;background:#ecebe5;">
+      <h2 style="margin:0;font-size:21px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;">Sign in</h2>
+    </div>
+    <div style="padding:28px 30px;">
+      <div style="margin-bottom:14px;"><div style="font-size:13px;color:#54534d;margin-bottom:5px;">Work email</div><input placeholder="ops@cardinal-logistics.example" style="width:100%;font-size:14px;padding:10px 12px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" /></div>
+      <div style="margin-bottom:6px;"><div style="font-size:13px;color:#54534d;margin-bottom:5px;">Password</div><input type="password" placeholder="????????????" style="width:100%;font-size:14px;padding:10px 12px;border:1px solid #d7d5cc;background:#fff;border-radius:2px;outline:none;" /></div>
+      <button style="width:100%;font-size:15px;font-weight:600;background:#1a1b1c;color:#faf9f5;border:1px solid #1a1b1c;border-radius:2px;padding:13px;cursor:pointer;margin-top:18px;" onClick="{{ onSignIn }}">Sign in</button>
+      <div style="display:flex;justify-content:space-between;margin-top:16px;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:13px;color:#54534d;cursor:pointer;" onClick="{{ goRegister }}">New here? Get started</span>
+        <span style="font-size:13px;color:#5b5a52;cursor:pointer;" onClick="{{ onEnterAdmin }}">Open operator console</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="display:{{ disp.admin }};max-width:1340px;margin:0 auto;padding:26px 30px 40px;">
+  <div style="background:#faf9f5;border:1px solid #d7d5cc;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;">
+    <div style="display:flex;align-items:baseline;gap:16px;padding:22px 30px;border-bottom:2px solid #1a1b1c;background:#ecebe5;">
+      <h2 style="margin:0;font-size:21px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;">Operator console</h2>
+      <span style="font-size:14px;color:#54534d;">All accounts &middot; week of Jun 22, 2026</span>
+      <div style="flex:1;"></div>
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#54534d;">internal</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:#d7d5cc;border-bottom:1px solid #d7d5cc;">
+      <div style="background:#faf9f5;padding:18px 22px;"><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5b5a52;">Active accounts</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:28px;font-weight:700;margin-top:5px;">14</div></div>
+      <div style="background:#faf9f5;padding:18px 22px;"><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5b5a52;">Loads processed</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:28px;font-weight:700;margin-top:5px;">1,920</div></div>
+      <div style="background:#faf9f5;padding:18px 22px;"><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5b5a52;">Money found</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:28px;font-weight:700;margin-top:5px;color:#c6781e;">$61,400</div></div>
+      <div style="background:#faf9f5;padding:18px 22px;"><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5b5a52;">MRR</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:28px;font-weight:700;margin-top:5px;color:#3f6f3a;">$7,180</div></div>
+      <div style="background:#faf9f5;padding:18px 22px;"><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5b5a52;">OCR docs</div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:28px;font-weight:700;margin-top:5px;">1,140</div></div>
+    </div>
+    <div style="padding:24px 30px;">
+      <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#5b5a52;margin-bottom:12px;">Customer accounts</div>
+      <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.1fr 0.9fr;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#5b5a52;padding-bottom:8px;border-bottom:1.5px solid #1a1b1c;">
+        <div>Account</div><div style="text-align:right;">Plan</div><div style="text-align:right;">Loads/wk</div><div style="text-align:right;">Exceptions</div><div style="text-align:right;">Found/wk</div><div style="text-align:right;">Status</div>
+      </div>
+      <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.1fr 0.9fr;align-items:center;padding:11px 0;border-bottom:1px solid #e6e4dc;font-size:14px;"><div style="font-weight:600;">Cardinal Logistics</div><div style="text-align:right;color:#54534d;">Growth</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;">142</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;color:#54534d;">12%</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600;color:#c6781e;">$13,050</div><div style="text-align:right;"><span style="font-size:11px;color:#3f6f3a;background:#dde7d6;border-radius:2px;padding:2px 8px;">active</span></div></div>
+      <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.1fr 0.9fr;align-items:center;padding:11px 0;border-bottom:1px solid #e6e4dc;font-size:14px;"><div style="font-weight:600;">Granite Brokerage</div><div style="text-align:right;color:#54534d;">Pilot</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;">88</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;color:#54534d;">15%</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600;color:#c6781e;">$7,420</div><div style="text-align:right;"><span style="font-size:11px;color:#c6781e;background:#f7e9d4;border-radius:2px;padding:2px 8px;">trial</span></div></div>
+      <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.1fr 0.9fr;align-items:center;padding:11px 0;border-bottom:1px solid #e6e4dc;font-size:14px;"><div style="font-weight:600;">Meridian Freight Partners</div><div style="text-align:right;color:#54534d;">Growth</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;">210</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;color:#54534d;">9%</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600;color:#c6781e;">$9,860</div><div style="text-align:right;"><span style="font-size:11px;color:#3f6f3a;background:#dde7d6;border-radius:2px;padding:2px 8px;">active</span></div></div>
+      <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.1fr 0.9fr;align-items:center;padding:11px 0;border-bottom:1px solid #e6e4dc;font-size:14px;"><div style="font-weight:600;">Atlas Shippers Co</div><div style="text-align:right;color:#54534d;">Enterprise</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;">540</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;color:#54534d;">7%</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600;color:#c6781e;">$21,300</div><div style="text-align:right;"><span style="font-size:11px;color:#3f6f3a;background:#dde7d6;border-radius:2px;padding:2px 8px;">active</span></div></div>
+      <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.1fr 0.9fr;align-items:center;padding:11px 0;border-bottom:1px solid #e6e4dc;font-size:14px;"><div style="font-weight:600;">Northgate Logistics</div><div style="text-align:right;color:#54534d;">Pilot</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;">64</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;color:#54534d;">18%</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600;color:#c6781e;">$4,120</div><div style="text-align:right;"><span style="font-size:11px;color:#c6781e;background:#f7e9d4;border-radius:2px;padding:2px 8px;">trial</span></div></div>
+      <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.1fr 0.9fr;align-items:center;padding:11px 0;border-bottom:1px solid #e6e4dc;font-size:14px;"><div style="font-weight:600;">Pinnacle Brokerage</div><div style="text-align:right;color:#54534d;">Growth</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;">176</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;color:#54534d;">11%</div><div style="text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600;color:#c6781e;">$5,650</div><div style="text-align:right;"><span style="font-size:11px;color:#3f6f3a;background:#dde7d6;border-radius:2px;padding:2px 8px;">active</span></div></div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:18px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;color:#54534d;">
+        <span><span style="color:#3f6f3a;">&bull;</span> OCR queue 3 pending</span>
+        <span><span style="color:#3f6f3a;">&bull;</span> API uptime 99.98%</span>
+        <span><span style="color:#3f6f3a;">&bull;</span> last tenant sync 2m ago</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="display:{{ disp.status }};max-width:1340px;margin:0 auto;padding:26px 30px 40px;">
+  <div style="background:#faf9f5;border:1px solid #d7d5cc;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;">
+    <div style="display:flex;align-items:baseline;gap:16px;padding:22px 30px;border-bottom:2px solid #1a1b1c;background:#ecebe5;">
+      <h2 style="margin:0;font-size:21px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;">Build status</h2>
+      <span style="font-size:14px;color:#54534d;">MVP pipeline, expectation vs current plan</span>
+      <div style="flex:1;"></div>
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#54534d;">internal</span>
+    </div>
+    <div style="padding:24px 30px;border-bottom:1px solid #d7d5cc;display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+      <div>
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5b5a52;">MVP readiness</div>
+        <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:46px;font-weight:700;line-height:1;margin-top:6px;">{{ mvpPct }}%</div>
+      </div>
+      <div style="flex:1;min-width:260px;">
+        <div style="height:9px;background:#ece7dd;border-radius:5px;overflow:hidden;"><div style="height:100%;width:{{ mvpPct }}%;background:#3f6f3a;border-radius:5px;"></div></div>
+        <div style="display:flex;gap:20px;margin-top:13px;font-size:13px;color:#54534d;flex-wrap:wrap;">
+          <span style="display:flex;align-items:center;gap:7px;"><span style="width:9px;height:9px;border-radius:50%;background:#3f6f3a;"></span>Shipping &middot; {{ shippingN }}</span>
+          <span style="display:flex;align-items:center;gap:7px;"><span style="width:9px;height:9px;border-radius:50%;background:#c6781e;"></span>In progress &middot; {{ progressN }}</span>
+          <span style="display:flex;align-items:center;gap:7px;"><span style="width:9px;height:9px;border-radius:50%;background:#8a877e;"></span>Planned &middot; {{ plannedN }}</span>
+        </div>
+      </div>
+    </div>
+    <div style="padding:6px 30px 22px;">
+      <sc-for list="{{ pipeline }}" as="p" hint-placeholder-count="11">
+        <div style="display:grid;grid-template-columns:28px 1fr;">
+          <div style="display:flex;justify-content:center;position:relative;">
+            <div style="width:2px;background:#e6e4dc;position:absolute;top:0;bottom:0;"></div>
+            <div style="width:11px;height:11px;border-radius:50%;background:{{ p.barColor }};margin-top:24px;position:relative;border:2px solid #faf9f5;"></div>
+          </div>
+          <div style="padding:16px 0 20px 16px;border-top:1px solid #e6e4dc;">
+            <div style="display:flex;align-items:center;gap:11px;">
+              <span style="font-size:16px;font-weight:700;">{{ p.n }}</span>
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;background:{{ p.chipBg }};color:{{ p.chipColor }};border-radius:2px;padding:2px 8px;">{{ p.chipLabel }}</span>
+              <div style="flex:1;"></div>
+              <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;font-weight:700;color:{{ p.barColor }};">{{ p.pctStr }}</span>
+            </div>
+            <div style="height:7px;background:#ece7dd;border-radius:4px;margin-top:10px;overflow:hidden;"><div style="height:100%;width:{{ p.pct }}%;background:{{ p.barColor }};border-radius:4px;"></div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:12px;">
+              <div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#8a877e;margin-bottom:4px;">Now</div><div style="font-size:13.5px;color:#54534d;line-height:1.5;">{{ p.now }}</div></div>
+              <div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#8a877e;margin-bottom:4px;">Long-term</div><div style="font-size:13.5px;color:#54534d;line-height:1.5;">{{ p.lt }}</div></div>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="padding:16px 30px;font-size:12.5px;color:#5b5a52;border-top:1px solid #d7d5cc;background:#ecebe5;">Percentages reflect the project's own STATUS and ROADMAP: the engine and config layers ship today; the API and review wiring are the gap to a live deployment; multi-tenant is deliberately deferred until paying customers exist.</div>
+  </div>
+</div>
+
+<div style="display:{{ disp.config }};max-width:1340px;margin:0 auto;padding:26px 30px 40px;">
+  <div style="background:#faf9f5;border:1px solid #d7d5cc;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;">
+    <div style="display:flex;align-items:baseline;gap:16px;padding:22px 30px;border-bottom:2px solid #1a1b1c;background:#ecebe5;">
+      <h2 style="margin:0;font-size:21px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;">Deployment config</h2>
+      <span style="font-size:14px;color:#54534d;">every external is one variable with a working offline stub</span>
+      <div style="flex:1;"></div>
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#54534d;">{{ liveCount }} / {{ externalsTotal }} live</span>
+    </div>
+    <div style="padding:18px 30px;border-bottom:1px solid #d7d5cc;font-size:14px;line-height:1.55;color:#54534d;">The whole product runs with every value below left blank. To go live, set the variable in <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;color:#1a1b1c;">deploy.config.js</span> &mdash; that one place &mdash; and its seam switches from the stub to the real service. Nothing else changes.</div>
+    <div style="padding:6px 30px 24px;">
+      <sc-for list="{{ externalsView }}" as="x" hint-placeholder-count="14">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 28px;padding:16px 0;border-top:1px solid #e6e4dc;">
+          <div style="grid-column:1 / -1;display:flex;align-items:center;gap:11px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:{{ x.dot }};"></span>
+            <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;font-weight:600;">{{ x.key }}</span>
+            <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#5b5a52;border:1px solid #d7d5cc;border-radius:2px;padding:2px 7px;">{{ x.phase }}</span>
+            <span style="font-size:14px;color:#54534d;">{{ x.label }}</span>
+            <div style="flex:1;"></div>
+            <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;background:{{ x.modeBg }};color:{{ x.modeColor }};border-radius:2px;padding:2px 9px;">{{ x.modeLabel }}</span>
+          </div>
+          <div style="padding-left:19px;"><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8a877e;margin-bottom:3px;">Works now (stub)</div><div style="font-size:13.5px;color:#1a1b1c;">{{ x.stub }}</div></div>
+          <div><div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8a877e;margin-bottom:3px;">Set to go live</div><div style="font-size:13.5px;color:#1a1b1c;"><span style="font-family:'IBM Plex Mono',ui-monospace,monospace;color:#c6781e;">{{ x.key }}</span> = {{ x.live }}</div><div style="font-size:12px;color:#5b5a52;margin-top:3px;">seam: {{ x.seam }}</div></div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="padding:16px 30px;font-size:12.5px;color:#5b5a52;border-top:1px solid #d7d5cc;background:#ecebe5;">This view reads the same deploy.config.js the app does. The API seam is wired now: set API_BASE_URL and the queue fetches real engine output from the server instead of running the ported engine in-browser.</div>
+  </div>
+</div>
+
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    filter: "all",
+    activeScreen: "landing",
+    authed: false,
+    role: "",
+    account: {},
+    regCompany: "",
+    regEmail: "",
+    regPlan: "Growth",
+    rulesSaved: false,
+    ocrSent: false,
+    previewResult: "",
+    newDisallowed: "",
+    disallowedExtra: [],
+    auditLog: [],
+    engineLoads: null,
+    engineDetails: null,
+    externals: [],
+    selectedId: "L-100482",
+    decisions: {},
+    ocr: { carrier:"Brightline Transport", invoice:"BL-44821", loadid:"L-100482", date:"2026-06-19", linehaul:"$1,980.00", fuel:"$315.00", detention:"$0.00", total:"$2,610.00" },
+    ocrEdited: {},
+    rules: { tolerance:"1.00", freeTime:"2.0", detRate:"75.00", maxDetention:"8.0", fuelKind:"pct_of_linehaul", fuelPct:"18", fuelPerMile:"0.55", fuelTol:"2.00", detCap:"80.00", lumperCap:"100.00", liftgateCap:"75.00", layoverCap:"150.00", reweighCap:"45.00" }
+  };
+
+  fmt(c){ const s = c < 0 ? "-" : ""; c = Math.abs(c); return s + "$" + Math.trunc(c/100).toLocaleString("en-US") + "." + String(c%100).padStart(2,"0"); }
+
+  rawLoads(){
+    if (this.state.engineLoads) return this.state.engineLoads;
+    return [
+      { id:"L-100481", carrier:"Sumter Carriers LLC", lane:"Dallas, TX to Houston, TX", broker:"Cardinal Logistics", billed:215000, agreed:215000,
+        findings:[ {type:"ok", sev:"ok", msg:"Invoice matches agreement and evidence; safe to auto-approve.", amt:0} ] },
+      { id:"L-100482", carrier:"Brightline Transport", lane:"Atlanta, GA to Memphis, TN", broker:"Cardinal Logistics", billed:261000, agreed:211500,
+        findings:[ {type:"line_overcharge", sev:"warn", msg:"Linehaul billed $1,980.00 vs agreed $1,800.00 (+$180.00).", amt:18000}, {type:"duplicate_line", sev:"warn", msg:"'fuel' charge of $315.00 appears 2x, one likely duplicate.", amt:31500} ] },
+      { id:"L-100483", carrier:"Mesa Haul Co", lane:"Denver, CO to Salt Lake City, UT", broker:"Granite Brokerage", billed:189000, agreed:180000,
+        findings:[ {type:"unauthorized_accessorial", sev:"warn", msg:"Unauthorized accessorial 'Liftgate' billed $90.00, not on rate con or pre-approved.", amt:9000} ] },
+      { id:"L-100484", carrier:"Granite Peak Logistics", lane:"Kansas City, MO to Omaha, NE", broker:"Cardinal Logistics", billed:142500, agreed:120000,
+        findings:[ {type:"detention_unsupported", sev:"block", msg:"Detention of $225.00 billed but POD shows only 1.5h on site (<= 2.0h free), not supported.", amt:0} ] },
+      { id:"L-100485", carrier:"Ironwood Freight Inc", lane:"Phoenix, AZ to El Paso, TX", broker:"Cardinal Logistics", billed:170000, agreed:170000,
+        findings:[ {type:"detention_underbilled", sev:"warn", msg:"POD shows 4.25h on site (2.25h past free time) but NO detention billed. Carrier owed ~$180.00, recoverable revenue.", amt:-18000} ] },
+      { id:"L-100486", carrier:"Delta Lane Freight", lane:"Chicago, IL to Detroit, MI", broker:"Granite Brokerage", billed:198000, agreed:198000,
+        findings:[ {type:"load_id_mismatch", sev:"block", msg:"Invoice references load L-100468 but rate con/POD reference L-100486; do not pay until resolved.", amt:0} ] },
+      { id:"L-100487", carrier:"Redbird Trucking", lane:"Seattle, WA to Portland, OR", broker:"Cardinal Logistics", billed:98000, agreed:93000,
+        findings:[ {type:"accessorial_over_cap", sev:"warn", msg:"Lumper billed $150.00 exceeds approved cap $100.00 (+$50.00).", amt:5000} ] },
+      { id:"L-100488", carrier:"Coastal Dray Inc", lane:"Newark, NJ to Philadelphia, PA", broker:"Granite Brokerage", billed:88000, agreed:88000,
+        findings:[ {type:"ok", sev:"ok", msg:"Invoice matches agreement and evidence; safe to auto-approve.", amt:0} ] },
+      { id:"L-100489", carrier:"Verde Cartage LLC", lane:"Tucson, AZ to Albuquerque, NM", broker:"Cardinal Logistics", billed:152000, agreed:130000,
+        findings:[ {type:"bad_pod_data", sev:"block", msg:"POD departure time is before arrival time (-1.50h), bad data; detention cannot be computed.", amt:0}, {type:"detention_unsupported", sev:"block", msg:"Detention of $220.00 billed but POD has no usable timestamps to substantiate it.", amt:0} ] }
+    ];
+  }
+
+  sevMeta(s){
+    const m = {
+      ok:    { color:"#3f6f3a", bg:"#dde7d6", label:"clean",   glyph:"\u2713" },
+      info:  { color:"#42607a", bg:"#dde6ec", label:"note",    glyph:"i" },
+      warn:  { color:"#c6781e", bg:"#f7e9d4", label:"review",  glyph:"!" },
+      block: { color:"#a02c25", bg:"#f3dcd8", label:"hold",    glyph:"\u2715" }
+    };
+    return m[s] || m.info;
+  }
+  worst(findings){
+    const order = ["ok","info","warn","block"]; let w = "ok";
+    findings.forEach(f => { if (order.indexOf(f.sev) > order.indexOf(w)) w = f.sev; });
+    return w;
+  }
+  overpay(l){ return l.findings.reduce((s,f)=> s + (f.amt>0?f.amt:0), 0); }
+  recover(l){ return -l.findings.reduce((s,f)=> s + (f.amt<0?f.amt:0), 0); }
+
+  componentDidMount(){
+    try {
+      const d = JSON.parse(localStorage.getItem("fa_decisions") || "null");
+      const r = JSON.parse(localStorage.getItem("fa_rules") || "null");
+      const patch = {};
+      if (d && typeof d === "object") patch.decisions = d;
+      if (r && typeof r === "object") patch.rules = { ...this.state.rules, ...r };
+      const al = JSON.parse(localStorage.getItem("fa_auditlog") || "null");
+      if (Array.isArray(al)) patch.auditLog = al;
+      if (Object.keys(patch).length) this.setState(patch);
+    } catch(e){}
+    this.loadEngine();
+  }
+  setScreen(s){ this.setState({ activeScreen: s }); try { (document.scrollingElement||document.documentElement).scrollTo({top:0,behavior:"smooth"}); } catch(e){} }
+  decide(id, kind){
+    const decisions = { ...this.state.decisions, [id]: kind };
+    const at = new Date().toISOString().slice(0,16).replace("T"," ");
+    const auditLog = [ ...this.state.auditLog, { id, kind, at } ];
+    this.setState({ decisions, auditLog });
+    try { localStorage.setItem("fa_decisions", JSON.stringify(decisions)); localStorage.setItem("fa_auditlog", JSON.stringify(auditLog)); } catch(e){}
+    if (this.cfgVal("DATABASE_URL") && this.apiBase()) { try { fetch(this.apiBase()+"/decisions", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id,kind,at})}); } catch(e){} }
+  }
+  saveRules(){
+    try { localStorage.setItem("fa_rules", JSON.stringify(this.state.rules)); } catch(e){}
+    this.setState({ rulesSaved: true });
+    setTimeout(() => this.setState({ rulesSaved: false }), 1800);
+  }
+  exportCsv(){
+    const rows = [["load_id","carrier","severity","overpayment","recoverable","decision"]];
+    this.rawLoads().forEach(l => {
+      rows.push([ l.id, l.carrier, this.worst(l.findings), this.fmt(this.overpay(l)), this.fmt(this.recover(l)), this.state.decisions[l.id] || "undecided" ]);
+    });
+    const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(",")).join("\n");
+    try {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv" }));
+      a.download = "freight-audit-decisions.csv";
+      a.click();
+    } catch(e){}
+  }
+  download(name, text, mime){ try { const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([text],{type:mime||"text/plain"})); a.download=name; a.click(); } catch(e){} }
+  cfgVal(k){ return (this._config || {})[k] || ""; }
+  apiBase(){ return this.cfgVal("API_BASE_URL").replace(/\/$/, ""); }
+  exportIif(){
+    const d=(c)=>(c/100).toFixed(2);
+    const lines=["!TRNS\tTRNSTYPE\tDATE\tACCNT\tNAME\tAMOUNT\tMEMO","!SPL\tTRNSTYPE\tDATE\tACCNT\tAMOUNT\tMEMO","!ENDTRNS"];
+    this.rawLoads().forEach(l=>{ lines.push("TRNS\tBILL\t06/22/2026\tAccounts Payable\t"+l.carrier+"\t-"+d(l.agreed)+"\tLoad "+l.id); lines.push("SPL\tBILL\t06/22/2026\tFreight Expense\t"+d(l.agreed)+"\tLoad "+l.id); lines.push("ENDTRNS"); });
+    if (this.cfgVal("QBO_CLIENT_ID") && this.apiBase()) { try { fetch(this.apiBase()+"/export/quickbooks", {method:"POST"}); } catch(e){} return; }
+    this.download("freight-audit-bills.iif", lines.join("\n"), "text/plain");
+  }
+  exportTmsJson(){
+    const payload=this.rawLoads().map(l=>{ const sev=this.worst(l.findings); return { load_id:l.id, carrier:l.carrier, severity:sev, net_money_impact_cents:(this.overpay(l)-this.recover(l)), auto_approvable:(sev==="ok"||sev==="info"), decision:this.state.decisions[l.id]||"undecided", findings:l.findings.map(f=>({type:f.type,severity:f.sev,message:f.msg,money_impact_cents:f.amt})) }; });
+    if (this.cfgVal("TMS_API_URL")) { try { fetch(this.cfgVal("TMS_API_URL"), {method:"POST",headers:{"content-type":"application/json","authorization":"Bearer "+this.cfgVal("TMS_API_TOKEN")},body:JSON.stringify(payload)}); } catch(e){} return; }
+    this.download("freight-audit-tms.json", JSON.stringify(payload,null,2), "application/json");
+  }
+  exportException(){
+    const rows=[["load_id","carrier","severity","type","message","money_impact"]];
+    this.rawLoads().forEach(l=>{ if(this.worst(l.findings)==="ok")return; l.findings.forEach(f=>{ if(f.sev==="ok")return; rows.push([l.id,l.carrier,f.sev,f.type,f.msg,this.fmt(f.amt)]); }); });
+    this.download("freight-audit-exceptions.csv", rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n"), "text/csv");
+  }
+  sendOcr(){ const prov=this.cfgVal("OCR_PROVIDER"); if (prov && prov!=="fixture" && this.apiBase()) { try { fetch(this.apiBase()+"/ocr/confirm", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(this.state.ocr)}); } catch(e){} } this.setState({ ocrSent:true }); }
+  reRunOcr(){ this.setState({ ocrEdited:{}, ocrSent:false }); }
+  onNewDisallowedInput = (e) => { this.setState({ newDisallowed: e.target.value }); };
+  addDisallowed(){ const v=(this.state.newDisallowed||"").trim(); if(!v)return; this.setState(s=>({ disallowedExtra:[...s.disallowedExtra, v], newDisallowed:"" })); }
+  previewBatch(){
+    const loads=this.rawLoads(); const ex=loads.filter(l=>this.worst(l.findings)!=="ok").length;
+    const over=loads.reduce((s,l)=>s+this.overpay(l),0); const rec=loads.reduce((s,l)=>s+this.recover(l),0);
+    this.setState({ previewResult: "Re-ran "+loads.length+" loads under this profile: "+ex+" exceptions, "+this.fmt(over)+" overpayment held, "+this.fmt(rec)+" recoverable." });
+  }
+  async loadEngine(){
+    try {
+      let cfg = { API_BASE_URL: "" }, externals = [];
+      try { const c = await import("./deploy.config.js"); cfg = c.CONFIG; externals = c.EXTERNALS; }
+      catch(e){ try { const ct = await fetch("deploy.config.js").then(r=>r.text()); const m=(new Function(ct.replace(/export /g,"")+"\nreturn {CONFIG, EXTERNALS};"))(); cfg=m.CONFIG; externals=m.EXTERNALS; } catch(e2){} }
+      if (externals && externals.length) this.setState({ externals: externals.map(x=>({ ...x, isLive: !!(cfg[x.key] && cfg[x.key]!=="mock" && cfg[x.key]!=="fixture") })) });
+      this._config = cfg;
+      let results;
+      if (cfg.API_BASE_URL) {
+        results = await fetch(cfg.API_BASE_URL.replace(/\/$/,"") + "/findings").then(r=>r.json());
+      } else if (cfg.FINDINGS_URL) {
+        results = await fetch(cfg.FINDINGS_URL).then(r=>r.json());
+      } else {
+        let eng, data;
+        try { [eng, data] = await Promise.all([import("./engine.js"), import("./freight_samples.js")]); }
+        catch(e){
+          const [et, dt] = await Promise.all([fetch("engine.js").then(r=>r.text()), fetch("freight_samples.js").then(r=>r.text())]);
+          eng = (new Function(et.replace(/export /g,"") + "\nreturn {runBatch};"))();
+          data = (new Function(dt.replace(/export /g,"") + "\nreturn {SAMPLE_LOADS};"))();
+        }
+        results = eng.runBatch(data.SAMPLE_LOADS);
+      }
+      if (results) {
+        const views = this.buildViews(results);
+        const sel = views.details[this.state.selectedId] ? this.state.selectedId : (results[0] && results[0].load_id);
+        this.setState({ engineLoads: views.loads, engineDetails: views.details, selectedId: sel });
+      }
+    } catch(e){}
+  }
+  runAudit(){
+    if (!this._runBatch || !this._samples) return;
+    const results = this._runBatch(this._samples);
+    const views = this.buildViews(results);
+    const sel = views.details[this.state.selectedId] ? this.state.selectedId : (results[0] && results[0].load_id);
+    this.setState({ engineLoads: views.loads, engineDetails: views.details, selectedId: sel });
+  }
+  buildViews(results){
+    const loads = []; const details = {};
+    results.forEach(r => {
+      const rc = r.rate_con, inv = r.invoice;
+      loads.push({
+        id: r.load_id,
+        carrier: (inv && inv.carrier_name) || (rc && rc.carrier_name) || "\u2014",
+        lane: rc ? (rc.origin + " to " + rc.destination) : "\u2014",
+        broker: (rc && rc.broker_name) || "\u2014",
+        billed: inv ? inv.billed_total_cents : 0,
+        agreed: rc ? rc.agreed_total_cents : 0,
+        findings: r.findings.map(f => ({ type: f.type, sev: f.severity, msg: f.message, amt: f.money_impact_cents }))
+      });
+      details[r.load_id] = this.buildDetail(r);
+    });
+    return { loads, details };
+  }
+  buildDetail(r){
+    const cs = (c) => this.fmt(c);
+    const rc = r.rate_con, inv = r.invoice, pod = r.pod;
+    const scac = (((inv && inv.carrier_name) || "").split(/\s+/).map(w=>w[0]||"").join("").replace(/[^A-Za-z]/g,"").toUpperCase().slice(0,4)) || "----";
+    const overCats=new Set(), capCats=new Set(), unauthDescs=new Set(); let unsupported=false, mismatch=false;
+    r.findings.forEach(f=>{
+      if(f.type==="line_overcharge"){ ["linehaul","fuel"].forEach(c=>{ if(f.message.toLowerCase().indexOf(c)!==-1) overCats.add(c); }); }
+      else if(f.type==="accessorial_over_cap"){ capCats.add(f.message.split(" ")[0].toLowerCase()); }
+      else if(f.type==="detention_unsupported"){ unsupported=true; }
+      else if(f.type==="unauthorized_accessorial"){ const m=f.message.match(/'([^']+)'/); if(m) unauthDescs.add(m[1]); }
+      else if(f.type==="load_id_mismatch"){ mismatch=true; }
+    });
+    const seen={};
+    const invItems=(inv?inv.line_items:[]).map(li=>{
+      const k=li.category+"|"+li.amount_cents; seen[k]=(seen[k]||0)+1;
+      let flag="", note="";
+      if(unauthDescs.has(li.description)){flag="unauth";note="not authorized";}
+      else if(seen[k]>1){flag="dup";note="duplicate";}
+      else if(li.category==="detention"&&unsupported){flag="unsupported";note="unproven";}
+      else if(overCats.has(li.category)){flag="over";note="over agreed";}
+      else if(capCats.has(li.category)){flag="overcap";note="over cap";}
+      return {d:li.description,a:li.amount_cents,flag,note};
+    });
+    const rcItems=(rc?rc.line_items:[]).map(li=>({d:li.description,a:li.amount_cents,muted:li.amount_cents===0}));
+    const HUMAN={total_mismatch:"Total mismatch",line_overcharge:"Line overcharge",duplicate_line:"Duplicate line",unauthorized_accessorial:"Unauthorized accessorial",accessorial_over_cap:"Over-cap accessorial",detention_unsupported:"Unsupported detention",detention_underbilled:"Recoverable detention",load_id_mismatch:"Load ID mismatch",bad_pod_data:"Bad POD data",missing_pod:"Missing POD",missing_doc:"Missing document"};
+    const reconLines=r.findings.filter(f=>f.type!=="ok").map(f=>({label:HUMAN[f.type]||f.type,amt:f.money_impact_cents,color: f.money_impact_cents<0?"#0f7368":(f.severity==="block"?"#a02c25":"#c6781e")}));
+    const net=r.net_money_impact_cents;
+    const billedDet=(inv?inv.line_items:[]).filter(li=>li.category==="detention").reduce((s,li)=>s+li.amount_cents,0);
+    let kind,total,heldAmt,action,actPrimary,actSecondary;
+    if(r.severity==="block"){
+      if(unsupported){ kind="held"; heldAmt=billedDet; total=0; action="Hold. The POD does not support the billed detention. Deny it unless the carrier provides timestamps."; actPrimary="Approve "+cs(rc?rc.agreed_total_cents:0); actSecondary="Deny "+cs(billedDet)+" detention"; }
+      else { kind="hold"; total=0; action="Hold. Resolve the blocking finding with the carrier before this load can be audited."; actPrimary="Return to carrier"; actSecondary="Mark unresolved"; }
+    } else if(net<0){ kind="recover"; total=-net; action="Carrier underbilled. The POD proves charges they never billed. Recover it before paying."; actPrimary="Recover "+cs(-net); actSecondary="Approve as billed"; }
+    else if(net>0){ kind="over"; total=net; action="Approve the agreed amount and dispute the overage with the carrier."; actPrimary="Approve "+cs(rc?rc.agreed_total_cents:0); actSecondary="Dispute "+cs(net); }
+    else { kind="clean"; total=0; action="Clean. All three documents reconcile. Auto approved for payment."; actPrimary="Approve "+cs(inv?inv.billed_total_cents:0); actSecondary=""; }
+    const tos=pod?pod.time_on_site_hours:null;
+    let tone="green",podNote;
+    if(!pod||!pod.delivered){tone="red";podNote=pod?"POD marked not delivered. Do not pay.":"No POD attached.";}
+    else if(tos===null){tone="red";podNote="No usable arrival/departure timestamps; detention cannot be computed.";}
+    else if(kind==="recover"){tone="teal";podNote="On site "+tos.toFixed(2)+"h, past the "+(rc?rc.free_time_hours:2)+"h free window. Detention owed but never billed.";}
+    else if(unsupported){tone="red";podNote="On site "+tos.toFixed(2)+"h, within free time. The billed detention is not substantiated.";}
+    else {tone="green";podNote="On site "+tos.toFixed(2)+"h, within the "+(rc?rc.free_time_hours:2)+"h free window.";}
+    const log=[((inv&&inv.invoice_date)||"")+"  engine reconciled 3 documents", (r.findings[0]&&r.findings[0].type!=="ok")?("flagged "+r.findings.length+" finding(s), severity "+r.severity):"no exceptions, auto approved"];
+    const rec={lines:reconLines,kind,total}; if(heldAmt!=null)rec.heldAmt=heldAmt;
+    return { broker:(rc&&rc.broker_name)||"\u2014", scac, pro:(inv&&inv.invoice_number)||"\u2014", free:(rc?rc.free_time_hours:2)+" h", invNo:(inv&&inv.invoice_number)||"\u2014", invDate:(inv&&inv.invoice_date)||"\u2014", rc:rcItems, rcTotal:rc?rc.agreed_total_cents:0, inv:invItems, invTotal:inv?inv.billed_total_cents:0, invMismatch: mismatch?("Invoice cites load "+inv.load_id+", different from the rate con and POD."):undefined, pod:{delivered:pod?pod.delivered:false,arr:(pod&&pod.arrival_time)||"not recorded",dep:(pod&&pod.departure_time)||"not recorded",onSite: tos===null?"not recorded":tos.toFixed(2)+" h",signer:(pod&&pod.signed_by)||"\u2014",note:podNote,tone}, recon:rec, action, actPrimary, actSecondary, log };
+  }
+  scrollTop(){ try { (document.scrollingElement||document.documentElement).scrollTo({top:0,behavior:"smooth"}); } catch(e){} }
+  onRegInput = (e) => { this.setState({ [e.target.dataset.k]: e.target.value }); };
+  register(){ if (this.cfgVal("STRIPE_KEY") && this.apiBase()) { try { fetch(this.apiBase()+"/checkout", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({plan:this.state.regPlan})}); } catch(e){} } this.setState(s => ({ authed:true, role:"customer", account:{ company: s.regCompany || "Cardinal Logistics", email: s.regEmail || "ops@cardinal-logistics.example", plan: s.regPlan || "Growth" }, activeScreen:"dashboard" })); this.scrollTop(); }
+  signIn(){ this.setState(s => ({ authed:true, role:"customer", account:{ company: s.account.company || "Cardinal Logistics", email: s.account.email || "ops@cardinal-logistics.example", plan: s.account.plan || "Growth" }, activeScreen:"dashboard" })); this.scrollTop(); }
+  enterAdmin(){ this.setState({ authed:true, role:"admin", activeScreen:"admin" }); this.scrollTop(); }
+  signOut(){ this.setState({ authed:false, role:"", activeScreen:"landing" }); this.scrollTop(); }
+  choosePlan(p){ this.setState({ regPlan:p, activeScreen:"register" }); this.scrollTop(); }
+  setFilter(f){ this.setState({ filter: f }); }
+  onOcrInput = (e) => { const k = e.target.dataset.k; const v = e.target.value; this.setState(s => ({ ocr:{...s.ocr,[k]:v}, ocrEdited:{...s.ocrEdited,[k]:true} })); };
+  onRuleInput = (e) => { const k = e.target.dataset.k; const v = e.target.value; this.setState(s => ({ rules:{...s.rules,[k]:v} })); };
+  goQueue = () => { this.setScreen("queue"); };
+
+  selectLoad(id){
+    this.setState({ selectedId: id, activeScreen: "detail" });
+    try { (document.scrollingElement||document.documentElement).scrollTo({top:0,behavior:"smooth"}); } catch(e){}
+  }
+
+  loadDetails(){
+    if (this.state.engineDetails) return this.state.engineDetails;
+    return {
+      "L-100481": { broker:"Cardinal Logistics", scac:"SUMT", pro:"0091 2210 4", free:"2.0 h", invNo:"SUM-3310", invDate:"2026-06-15",
+        rc:[{d:"Linehaul",a:190000},{d:"Fuel surcharge",a:25000}], rcTotal:215000,
+        inv:[{d:"Linehaul",a:190000},{d:"Fuel surcharge",a:25000}], invTotal:215000,
+        pod:{delivered:true,arr:"2026-06-14 07:30",dep:"2026-06-14 09:00",onSite:"1.5 h",signer:"R. Cole",note:"On site 1.5 h, within free time. Nothing owed either way.",tone:"green"},
+        recon:{lines:[],kind:"clean",total:0},
+        action:"Clean. All three documents reconcile. Auto approved for payment.", actPrimary:"Approve $2,150.00", actSecondary:"",
+        log:["2026-06-15 08:02  engine reconciled 3 documents","2026-06-15 08:02  no exceptions, auto approved"] },
+
+      "L-100482": { broker:"Cardinal Logistics", scac:"BRTL", pro:"0042 8817 5", free:"2.0 h", invNo:"BL-44821", invDate:"2026-06-19",
+        rc:[{d:"Linehaul",a:180000},{d:"Fuel surcharge",a:31500}], rcTotal:211500,
+        inv:[{d:"Linehaul",a:198000,flag:"over",note:"+$180 over"},{d:"Fuel surcharge",a:31500},{d:"Fuel surcharge",a:31500,flag:"dup",note:"duplicate"}], invTotal:261000,
+        pod:{delivered:true,arr:"2026-06-18 08:00",dep:"2026-06-18 09:30",onSite:"1.5 h",signer:"M. Ortiz",note:"On site 1.5 h, within the 2.0 h free window. No detention owed either way.",tone:"green"},
+        recon:{lines:[{label:"Linehaul overcharge",amt:18000,color:"#c6781e"},{label:"Duplicate fuel surcharge",amt:31500,color:"#a02c25"}],kind:"over",total:49500},
+        action:"Hold the load. Approve $2,115.00 for payment and dispute $495.00 with the carrier.", actPrimary:"Approve $2,115.00", actSecondary:"Dispute $495.00",
+        log:["2026-06-20 09:14  engine flagged 2 findings","2026-06-20 09:14  routed to review, severity hold"] },
+
+      "L-100483": { broker:"Granite Brokerage", scac:"MESA", pro:"0067 3390 1", free:"2.0 h", invNo:"MH-2207", invDate:"2026-06-16",
+        rc:[{d:"Linehaul",a:155000},{d:"Fuel surcharge",a:25000}], rcTotal:180000,
+        inv:[{d:"Linehaul",a:155000},{d:"Fuel surcharge",a:25000},{d:"Liftgate",a:9000,flag:"unauth",note:"not authorized"}], invTotal:189000,
+        pod:{delivered:true,arr:"2026-06-15 10:00",dep:"2026-06-15 11:00",onSite:"1.0 h",signer:"T. Nunez",note:"Delivery confirmed. No liftgate basis on the rate con.",tone:"amber"},
+        recon:{lines:[{label:"Liftgate not on rate con",amt:9000,color:"#c6781e"}],kind:"over",total:9000},
+        action:"Liftgate has no basis on the rate con. Dispute it and approve the rest.", actPrimary:"Approve $1,800.00", actSecondary:"Dispute $90.00",
+        log:["2026-06-16 11:20  engine flagged 1 finding","2026-06-16 11:20  routed to review, severity review"] },
+
+      "L-100484": { broker:"Cardinal Logistics", scac:"GRPK", pro:"0078 1145 9", free:"2.0 h", invNo:"GP-5582", invDate:"2026-06-17",
+        rc:[{d:"Linehaul",a:105000},{d:"Fuel surcharge",a:15000}], rcTotal:120000,
+        inv:[{d:"Linehaul",a:105000},{d:"Fuel surcharge",a:15000},{d:"Detention",a:22500,flag:"unsupported",note:"unproven"}], invTotal:142500,
+        pod:{delivered:true,arr:"2026-06-16 08:00",dep:"2026-06-16 09:30",onSite:"1.5 h",signer:"P. Vance",note:"On site 1.5 h, under the 2.0 h free window. Detention is not substantiated by the POD.",tone:"red"},
+        recon:{lines:[{label:"Detention billed but POD shows only 1.5 h on site",amt:0,color:"#a02c25"}],kind:"held",heldAmt:22500,total:0},
+        action:"Hold. The POD does not support the detention. Deny the $225.00 unless the carrier provides timestamps, and approve $1,200.00.", actPrimary:"Approve $1,200.00", actSecondary:"Deny $225.00 detention",
+        log:["2026-06-17 07:48  engine flagged 1 finding","2026-06-17 07:48  detention unsupported, severity hold"] },
+
+      "L-100485": { broker:"Cardinal Logistics", scac:"IRWD", pro:"0042 7820 3", free:"2.0 h", invNo:"IW-7820", invDate:"2026-06-14",
+        rc:[{d:"Linehaul",a:145000},{d:"Fuel surcharge",a:25000},{d:"Detention (cap $80.00/h)",a:0,muted:true}], rcTotal:170000,
+        inv:[{d:"Linehaul",a:145000},{d:"Fuel surcharge",a:25000}], invTotal:170000,
+        pod:{delivered:true,arr:"2026-06-13 06:00",dep:"2026-06-13 10:15",onSite:"4.25 h",signer:"D. Salazar",note:"On site 4.25 h, 2.25 h past free time. $180.00 detention owed but never billed.",tone:"teal"},
+        recon:{lines:[{label:"Detention owed 2.25 h @ $80.00, not billed",amt:-18000,color:"#0f7368"}],kind:"recover",total:18000},
+        action:"Carrier underbilled. The POD proves detention they never charged. Recover it before paying.", actPrimary:"Recover $180.00", actSecondary:"Approve as billed",
+        log:["2026-06-14 16:30  engine flagged 1 finding, recoverable","2026-06-14 16:30  carrier underbilled detention $180.00"] },
+
+      "L-100486": { broker:"Granite Brokerage", scac:"DLLF", pro:"0090 4431 7", free:"2.0 h", invNo:"DL-9043", invDate:"2026-06-18",
+        rc:[{d:"Linehaul",a:170000},{d:"Fuel surcharge",a:28000}], rcTotal:198000,
+        inv:[{d:"Linehaul",a:170000},{d:"Fuel surcharge",a:28000}], invTotal:198000, invMismatch:"Invoice cites load L-100468, not L-100486.",
+        pod:{delivered:true,arr:"2026-06-17 09:00",dep:"2026-06-17 10:30",onSite:"1.5 h",signer:"K. Boyd",note:"POD is for L-100486. The invoice cites a different load. Cannot match.",tone:"red"},
+        recon:{lines:[{label:"Invoice load ID L-100468 does not match",amt:0,color:"#a02c25"}],kind:"hold",total:0},
+        action:"Documents reference different loads. Hold and confirm the correct load ID before auditing.", actPrimary:"Return to carrier", actSecondary:"Mark unresolved",
+        log:["2026-06-18 10:05  integrity guard tripped","2026-06-18 10:05  load ID mismatch, blocked from audit"] },
+
+      "L-100487": { broker:"Cardinal Logistics", scac:"RDBD", pro:"0033 1145 2", free:"2.0 h", invNo:"RB-1145", invDate:"2026-06-19",
+        rc:[{d:"Linehaul",a:73000},{d:"Fuel surcharge",a:10000},{d:"Lumper (cap $100.00)",a:10000}], rcTotal:93000,
+        inv:[{d:"Linehaul",a:73000},{d:"Fuel surcharge",a:10000},{d:"Lumper",a:15000,flag:"overcap",note:"cap $100.00"}], invTotal:98000,
+        pod:{delivered:true,arr:"2026-06-18 12:00",dep:"2026-06-18 13:00",onSite:"1.0 h",signer:"L. Frey",note:"Delivery and lumper service confirmed. Charge exceeds the contracted cap.",tone:"amber"},
+        recon:{lines:[{label:"Lumper $150.00 over $100.00 cap",amt:5000,color:"#c6781e"}],kind:"over",total:5000},
+        action:"Lumper exceeds the contracted cap. Dispute the overage and approve the capped amount.", actPrimary:"Approve $930.00", actSecondary:"Dispute $50.00",
+        log:["2026-06-19 13:12  engine flagged 1 finding","2026-06-19 13:12  routed to review, severity review"] },
+
+      "L-100488": { broker:"Granite Brokerage", scac:"CSTL", pro:"0051 7781 8", free:"2.0 h", invNo:"CD-7781", invDate:"2026-06-16",
+        rc:[{d:"Linehaul",a:76000},{d:"Fuel surcharge",a:12000}], rcTotal:88000,
+        inv:[{d:"Linehaul",a:76000},{d:"Fuel surcharge",a:12000}], invTotal:88000,
+        pod:{delivered:true,arr:"2026-06-15 14:00",dep:"2026-06-15 15:00",onSite:"1.0 h",signer:"A. Reyes",note:"On site 1.0 h. Clean delivery.",tone:"green"},
+        recon:{lines:[],kind:"clean",total:0},
+        action:"Clean. All three documents reconcile. Auto approved for payment.", actPrimary:"Approve $880.00", actSecondary:"",
+        log:["2026-06-16 15:40  engine reconciled 3 documents","2026-06-16 15:40  no exceptions, auto approved"] },
+      "L-100489": { broker:"Cardinal Logistics", scac:"VRDE", pro:"0088 3120 6", free:"2.0 h", invNo:"VC-3088", invDate:"2026-06-18",
+        rc:[{d:"Linehaul",a:110000},{d:"Fuel surcharge",a:20000}], rcTotal:130000,
+        inv:[{d:"Linehaul",a:110000},{d:"Fuel surcharge",a:20000},{d:"Detention",a:22000,flag:"unsupported",note:"no usable POD time"}], invTotal:152000,
+        pod:{delivered:true,arr:"2026-06-17 10:00",dep:"2026-06-17 08:30",onSite:"\u22121.5 h",signer:"J. Mora",note:"Departure is recorded before arrival. The timestamps are invalid, so detention cannot be computed.",tone:"red"},
+        recon:{lines:[{label:"POD timestamps inverted, detention unverifiable",amt:0,color:"#a02c25"}],kind:"hold",total:0},
+        action:"Hold. The POD timestamps are invalid. Return the load to the carrier for a corrected POD before auditing.", actPrimary:"Return to carrier", actSecondary:"Mark unresolved",
+        log:["2026-06-18 11:22  integrity guard tripped","2026-06-18 11:22  bad POD data, blocked from audit"] }
+    };
+  }
+
+  renderVals(){
+    const loads = this.rawLoads().map(l => {
+      const sev = this.worst(l.findings);
+      const sm = this.sevMeta(sev);
+      const ov = this.overpay(l), rc = this.recover(l);
+      const dec = this.state.decisions[l.id] || "";
+      let impactStr, impactColor;
+      if (sev === "block"){ impactStr = "hold"; impactColor = "#a02c25"; }
+      else if (rc > 0){ impactStr = "recover " + this.fmt(rc); impactColor = "#0f7368"; }
+      else if (ov > 0){ impactStr = "overpay " + this.fmt(ov); impactColor = "#c6781e"; }
+      else { impactStr = "balanced"; impactColor = "#5b5a52"; }
+      return {
+        id:l.id, carrier:l.carrier, lane:l.lane, broker:l.broker,
+        billedStr:this.fmt(l.billed), agreedStr:this.fmt(l.agreed),
+        sev, sevColor:sm.color, sevBg:sm.bg, sevLabel:sm.label, recoverPos: rc > 0,
+        impactStr, impactColor,
+        decided:dec,
+        decidedLabel: dec === "approved" ? "Approved for payment" : dec === "disputed" ? "Flagged for dispute" : "",
+        decidedColor: dec === "approved" ? "#3f6f3a" : "#c6781e",
+        cardOpacity: dec ? 0.62 : 1,
+        sevGlyph: sm.glyph,
+        rowBg: this.state.selectedId === l.id ? "#f1efe7" : "#faf9f5",
+        selected: this.state.selectedId === l.id,
+        select: () => this.selectLoad(l.id),
+        approve: () => this.decide(l.id, "approved"),
+        flag: () => this.decide(l.id, "disputed"),
+        findings: l.findings.map(f => {
+          const fm = this.sevMeta(f.sev);
+          return { msg:f.msg, type:f.type, typeCode: (f.type||"").toUpperCase(), dotColor:fm.color, hasAmt: f.amt !== 0, amtStr: "[" + this.fmt(f.amt) + "]", amtColor: f.amt < 0 ? "#0f7368" : "#c6781e" };
+        })
+      };
+    });
+
+    const shown = loads.filter(l => {
+      const f = this.state.filter;
+      if (f === "all") return true;
+      if (f === "undecided") return !l.decided;
+      if (f === "recover") return l.recoverPos;
+      if (f === "clean") return l.sev === "ok" || l.sev === "info";
+      return l.sev === f;
+    });
+
+    const totOver = this.rawLoads().reduce((s,l)=> s + this.overpay(l), 0);
+    const totRec = this.rawLoads().reduce((s,l)=> s + this.recover(l), 0);
+    const clean = loads.filter(l => l.sev==="ok"||l.sev==="info").length;
+    const blocking = loads.filter(l => l.sev==="block").length;
+    const review = loads.filter(l => l.sev==="warn").length;
+    const decidedN = Object.keys(this.state.decisions).length;
+
+    const filters = [
+      {key:"all", label:"All"}, {key:"block", label:"Blocking"}, {key:"warn", label:"Needs review"},
+      {key:"recover", label:"Recoverable"}, {key:"clean", label:"Clean"}, {key:"undecided", label:"Undecided"}
+    ].map(f => ({
+      key:f.key, label:f.label, pressed: this.state.filter === f.key,
+      bg: this.state.filter === f.key ? "#1a1b1c" : "#faf9f5",
+      fg: this.state.filter === f.key ? "#faf9f5" : "#54534d",
+      onClick: () => this.setFilter(f.key)
+    }));
+
+    // ---- dashboard ----
+    const trendRaw = [ {w:"5/05",v:62}, {w:"5/12",v:78}, {w:"5/19",v:54}, {w:"5/26",v:91}, {w:"6/02",v:83}, {w:"6/09",v:110}, {w:"6/16",v:98}, {w:"6/22",v:131} ];
+    const trendMax = Math.max(...trendRaw.map(t=>t.v));
+    const trend = trendRaw.map((t,i) => ({ w:t.w, h: Math.round(t.v/trendMax*150)+4, label:"$"+(t.v/10).toFixed(1)+"k", last: i===trendRaw.length-1 }));
+
+    const ftRaw = [
+      {label:"Overcharge / total mismatch", n:31, amt:412000, c:"#c6781e"},
+      {label:"Duplicate line", n:9, amt:198000, c:"#c6781e"},
+      {label:"Unauthorized accessorial", n:22, amt:154000, c:"#c6781e"},
+      {label:"Over-cap accessorial", n:14, amt:89000, c:"#c6781e"},
+      {label:"Unprovable detention", n:18, amt:131000, c:"#c6781e"},
+      {label:"Recoverable detention", n:11, amt:321000, c:"#0f7368"},
+      {label:"Integrity hold", n:12, amt:0, c:"#a02c25"}
+    ];
+    const ftMax = Math.max(...ftRaw.map(f=>f.amt));
+    const findingTypes = ftRaw.map(f => ({ label:f.label, n:f.n, amtStr: f.amt? this.fmt(f.amt) : "hold", color:f.c, barW: f.amt? Math.max(4, Math.round(f.amt/ftMax*100)) : 0 }));
+
+    const carriers = [
+      {name:"Brightline Transport", loads:19, amt:231000, rate:"16%", recover:false},
+      {name:"Granite Peak Logistics", loads:24, amt:187000, rate:"12%", recover:false},
+      {name:"Mesa Haul Co", loads:17, amt:124000, rate:"9%", recover:false},
+      {name:"Redbird Trucking", loads:21, amt:98000, rate:"7%", recover:false},
+      {name:"Ironwood Freight Inc", loads:15, amt:64000, rate:"5%", recover:true}
+    ].map(c => ({ name:c.name, loads:c.loads, amtStr:(c.recover?"+":"")+this.fmt(c.amt), amtColor:c.recover?"#0f7368":"#c6781e", rate:c.rate }));
+
+    // ---- ocr ----
+    const ocrMeta = [
+      {key:"carrier", label:"Carrier name", conf:"high"},
+      {key:"invoice", label:"Invoice number", conf:"high"},
+      {key:"loadid", label:"Load ID", conf:"high"},
+      {key:"date", label:"Invoice date", conf:"med"},
+      {key:"linehaul", label:"Linehaul", conf:"high"},
+      {key:"fuel", label:"Fuel surcharge", conf:"low"},
+      {key:"detention", label:"Detention", conf:"high"},
+      {key:"total", label:"Billed total", conf:"med"}
+    ];
+    const confMeta = { high:{c:"#0f7368",l:"high"}, med:{c:"#c6781e",l:"med"}, low:{c:"#a02c25",l:"low"} };
+    const ocrFields = ocrMeta.map(m => {
+      const edited = !!this.state.ocrEdited[m.key];
+      const flagged = (m.conf === "low" || m.conf === "med") && !edited;
+      const cm = confMeta[m.conf];
+      return {
+        key:m.key, label:m.label, value:this.state.ocr[m.key],
+        conf:m.conf, confColor: edited ? "#3f6f3a" : cm.c, confLabel: edited ? "fixed" : cm.l,
+        flagged, ring: flagged ? (m.conf==="low" ? "#a02c25" : "#c6781e") : "#d7d5cc",
+        ringBg: flagged ? (m.conf==="low" ? "#f3dcd8" : "#f7e9d4") : "#fff",
+        onInput: this.onOcrInput
+      };
+    });
+    const flaggedN = ocrFields.filter(f=>f.flagged).length;
+    const confScore = ocrFields.reduce((s,f)=>{ const edited=!!this.state.ocrEdited[f.key]; const base=edited?1:(f.conf==="high"?0.97:f.conf==="med"?0.82:0.55); return s+base; },0)/ocrFields.length;
+    const ocrConf = Math.round(confScore*100);
+    const ocrLayout = "tabular_invoice";
+    let ocrVerdict = flaggedN === 0
+      ? { label:"CONFIDENT", color:"#0f7368", bg:"#d8ece8", note:"All fields verified. Ready to send to the audit engine." }
+      : { label:"NEEDS REVIEW", color:"#c6781e", bg:"#f7e9d4", note:flaggedN + " field(s) below the confidence bar. Total does not equal the line sum. Confirm before audit." };
+    if (this.state.ocrSent) ocrVerdict = { label:"SENT", color:"#3f6f3a", bg:"#dde7d6", note:"Confirmed and sent to the audit engine." };
+
+    // ---- load detail (driven by selectedId) ----
+    const fmt = (c) => this.fmt(c);
+    const det = this.loadDetails()[this.state.selectedId];
+    const Lsel = this.rawLoads().find(x => x.id === this.state.selectedId) || this.rawLoads()[1];
+    const sevSel = this.worst(Lsel.findings); const smSel = this.sevMeta(sevSel);
+    const ovSel = this.overpay(Lsel), rcSel = this.recover(Lsel);
+    let dImp, dImpC;
+    if (sevSel === "block") { dImp = "hold"; dImpC = "#a02c25"; }
+    else if (rcSel > 0) { dImp = "recover " + fmt(rcSel); dImpC = "#0f7368"; }
+    else if (ovSel > 0) { dImp = "overpay " + fmt(ovSel); dImpC = "#c6781e"; }
+    else { dImp = "balanced"; dImpC = "#5b5a52"; }
+    const flagSty = (flag) => {
+      if (flag === "dup" || flag === "mismatch") return { bg:"#f3dcd8", bd:"#a02c25", fg:"#a02c25" };
+      if (flag) return { bg:"#f7e9d4", bd:"#c6781e", fg:"#c6781e" };
+      return { bg:"transparent", bd:"transparent", fg:"#1a1b1c" };
+    };
+    const toneMap = { green:{bg:"#dde7d6",bd:"#3f6f3a"}, amber:{bg:"#f7e9d4",bd:"#c6781e"}, teal:{bg:"#d8ece8",bd:"#0f7368"}, red:{bg:"#f3dcd8",bd:"#a02c25"} };
+    let rTotStr, rLabel, rColor;
+    if (det.recon.kind === "over") { rTotStr = fmt(det.recon.total); rLabel = "Overpayment to dispute"; rColor = "#c6781e"; }
+    else if (det.recon.kind === "recover") { rTotStr = fmt(det.recon.total); rLabel = "Recoverable revenue"; rColor = "#0f7368"; }
+    else if (det.recon.kind === "held") { rTotStr = fmt(det.recon.heldAmt || 0) + " held"; rLabel = "Detention pending proof"; rColor = "#a02c25"; }
+    else if (det.recon.kind === "hold") { rTotStr = "cannot reconcile"; rLabel = "Status"; rColor = "#a02c25"; }
+    else { rTotStr = fmt(0); rLabel = "Net difference"; rColor = "#3f6f3a"; }
+    const detailView = {
+      id: Lsel.id, carrier: Lsel.carrier, lane: Lsel.lane, scac: det.scac, pro: det.pro,
+      sevLabel: smSel.label, sevGlyph: smSel.glyph, sevColor: smSel.color, sevBg: smSel.bg,
+      impactStr: dImp, impactColor: dImpC,
+      broker: det.broker, free: det.free, invNo: det.invNo, invDate: det.invDate,
+      rcItems: det.rc.map(it => ({ d:it.d, aStr:fmt(it.a), rowColor: it.muted ? "#5b5a52" : "#1a1b1c" })),
+      rcTotalStr: fmt(det.rcTotal),
+      hasInvMismatch: !!det.invMismatch, invMismatch: det.invMismatch || "",
+      invItems: det.inv.map(it => { const s = flagSty(it.flag); return { d:it.d, aStr:fmt(it.a), note:it.note||"", hasNote: !!it.note, bg:s.bg, bd:s.bd, fg:s.fg }; }),
+      invTotalStr: fmt(det.invTotal),
+      podDelivered: det.pod.delivered ? "yes" : "no", podArr: det.pod.arr, podDep: det.pod.dep, podOnSite: det.pod.onSite, podSigner: det.pod.signer,
+      podNote: det.pod.note, podNoteBg: toneMap[det.pod.tone].bg, podNoteBd: toneMap[det.pod.tone].bd,
+      reconAgreedStr: fmt(det.rcTotal), reconBilledStr: fmt(det.invTotal),
+      reconLines: det.recon.lines.map(ln => ({ label:ln.label, aStr: ln.amt === 0 ? "" : (ln.amt > 0 ? "+" : "") + fmt(ln.amt), color: ln.color })),
+      reconTotalLabel: rLabel, reconTotalStr: rTotStr, reconTotalColor: rColor,
+      action: det.action, actPrimary: det.actPrimary, actSecondary: det.actSecondary || "", hasSecondary: !!det.actSecondary,
+      onApprove: () => this.decide(this.state.selectedId, "approved"),
+      onDispute: () => this.decide(this.state.selectedId, "disputed"),
+      decidedNote: this.state.decisions[this.state.selectedId] === "approved" ? "Approved for payment" : this.state.decisions[this.state.selectedId] === "disputed" ? "Flagged for dispute" : "",
+      log: det.log
+    };
+
+    const active = this.state.activeScreen;
+    const appScreens = [
+      {key:"dashboard",label:"Dashboard",num:"01"},
+      {key:"queue",label:"Review queue",num:"02"},
+      {key:"detail",label:"Load detail",num:"03"},
+      {key:"ocr",label:"OCR review",num:"04"},
+      {key:"rules",label:"Rules",num:"05"}
+    ];
+    const navItems = appScreens.map(s => ({
+      label:s.label, num:s.num,
+      onClick: () => this.setScreen(s.key),
+      bg: active === s.key ? "#33332e" : "transparent",
+      fg: active === s.key ? "#faf9f5" : "#b8b6ad",
+      numColor: active === s.key ? "#d99a4e" : "#6a6a62"
+    }));
+    const allViews = ["landing","pricing","register","signin","dashboard","queue","detail","ocr","rules","admin","status","config"];
+    const disp = {};
+    allViews.forEach(v => { disp[v] = active === v ? "block" : "none"; });
+    const publicViews = ["landing","pricing","register","signin"];
+    const appViewsArr = ["dashboard","queue","detail","ocr","rules"];
+    const chrome = {
+      publicNav: publicViews.includes(active) ? "flex" : "none",
+      appNav: appViewsArr.includes(active) ? "flex" : "none",
+      appTop: appViewsArr.includes(active) ? "flex" : "none",
+      adminNav: (active === "admin" || active === "status" || active === "config") ? "flex" : "none"
+    };
+    const account = {
+      company: this.state.account.company || "Cardinal Logistics",
+      email: this.state.account.email || "ops@cardinal-logistics.example",
+      plan: this.state.account.plan || "Growth"
+    };
+    const regPlan = this.state.regPlan || "Growth";
+    const r = this.state.rules;
+    const fuelRule = r.fuelKind === "per_mile"
+      ? { kind:"per_mile", per_mile:"$"+r.fuelPerMile, tolerance:"$"+r.fuelTol }
+      : r.fuelKind === "none" ? { kind:"none" }
+      : { kind:"pct_of_linehaul", pct: Number(r.fuelPct)/100, tolerance:"$"+r.fuelTol };
+    const profileObj = {
+      name: account.company,
+      tolerance: "$"+r.tolerance,
+      default_detention_rate: "$"+r.detRate,
+      free_time_hours: Number(r.freeTime),
+      max_detention_hours: Number(r.maxDetention),
+      fuel_rule: fuelRule,
+      global_accessorial_caps: { detention:"$"+r.detCap, lumper:"$"+r.lumperCap, liftgate:"$"+r.liftgateCap, layover:"$"+r.layoverCap, reweigh:"$"+r.reweighCap },
+      disallowed_accessorials: ["tonu after delivery","driver assist, non-contracted"].concat(this.state.disallowedExtra.map(s=>s.toLowerCase()))
+    };
+    const profileJson = JSON.stringify(profileObj, null, 2);
+    const hMeta = { now:{c:"#3f6f3a",bg:"#dde7d6",l:"shipping"}, next:{c:"#c6781e",bg:"#f7e9d4",l:"in progress"}, later:{c:"#8a877e",bg:"#ecebe5",l:"planned"} };
+    const pipeRaw = [
+      {n:"Document intake", h:"now", pct:100, now:"Rate con, invoice, and POD as structured JSON dataclasses.", lt:"Auto-ingest from email, EDI 210/214, and scans."},
+      {n:"OCR extraction", h:"now", pct:80, now:"Tesseract + noise-tolerant parser, proven on a synthetic receipt.", lt:"Cloud OCR (Textract/Veryfi) above 95% on real, messy scans."},
+      {n:"Layout mapping", h:"now", pct:70, now:"Config-driven layout profiles, proven on two formats.", lt:"A profile per carrier format, auto-suggested from samples."},
+      {n:"Normalize vocabulary", h:"now", pct:95, now:"Free-text charges mapped to canonical categories, data-driven.", lt:"Per-client vocab overlays curated from their real invoices."},
+      {n:"Match engine", h:"now", pct:100, now:"Every money rule + integrity guards, covered by 37 tests.", lt:"More real-world edge cases, each one test-covered."},
+      {n:"Client profiles", h:"now", pct:90, now:"Tolerances, caps, and fuel rule as JSON config, no code change.", lt:"New rule types added only as a client genuinely needs them."},
+      {n:"Persistence + audit log", h:"now", pct:72, now:"SQLite + append-only log; this console records every decision live and persists it.", lt:"Managed datastore with full history and search."},
+      {n:"Exporters", h:"now", pct:100, now:"All four export to real files: CSV, QuickBooks IIF, TMS JSON, exception worklist.", lt:"Live write-back to a specific TMS or accounting API."},
+      {n:"Review console (this app)", h:"next", pct:93, now:"Queue, detail, OCR review, rules, decisions, and exports, running the real engine on the repo's sample loads.", lt:"Wired to the live API with a server queue and reviewer roles."},
+      {n:"REST API + auth", h:"next", pct:10, now:"API-key gate scaffold only; no service yet.", lt:"FastAPI service with auth and persistence behind it."},
+      {n:"Multi-tenant platform", h:"later", pct:0, now:"Not started, deliberately, until paying customers exist.", lt:"Per-tenant isolation, queues, roles, and scale."}
+    ];
+    const pipeline = pipeRaw.map(p => ({ n:p.n, pct:p.pct, pctStr:p.pct+"%", now:p.now, lt:p.lt, barColor:hMeta[p.h].c, chipBg:hMeta[p.h].bg, chipColor:hMeta[p.h].c, chipLabel:hMeta[p.h].l }));
+    const mvpScope = pipeRaw.filter(p => p.h !== "later");
+    const mvpPct = Math.round(mvpScope.reduce((s,p) => s + p.pct, 0) / mvpScope.length);
+    const shippingN = pipeRaw.filter(p => p.h === "now").length;
+    const progressN = pipeRaw.filter(p => p.h === "next").length;
+    const plannedN = pipeRaw.filter(p => p.h === "later").length;
+    const admA = active === "admin", admS = active === "status", admC = active === "config";
+    const adminTabs = { ovBg: admA?"#33332e":"transparent", ovFg: admA?"#faf9f5":"#b8b6ad", stBg: admS?"#33332e":"transparent", stFg: admS?"#faf9f5":"#b8b6ad", cfBg: admC?"#33332e":"transparent", cfFg: admC?"#faf9f5":"#b8b6ad" };
+    const phaseLabels = {"0":"phase 0","1":"phase 1","2":"phase 2","3":"phase 3","4":"phase 4","5":"phase 5","6":"phase 6"};
+    const externalsView = (this.state.externals||[]).map(x => ({
+      key:x.key, label:x.label, stub:x.stub, live:x.live, seam:x.seam, phase:phaseLabels[x.phase]||("phase "+x.phase),
+      modeLabel: x.isLive ? "live" : "offline stub",
+      modeBg: x.isLive ? "#dde7d6" : "#ecebe5", modeColor: x.isLive ? "#3f6f3a" : "#5b5a52",
+      dot: x.isLive ? "#3f6f3a" : "#b3b1a4"
+    }));
+    const liveCount = externalsView.filter(x=>x.modeLabel==="live").length;
+    const klabel = { approved:"approved for payment", disputed:"flagged for dispute" };
+    const auditLogView = [...this.state.auditLog].reverse().slice(0,6).map(e => ({ id:e.id, at:e.at, label:klabel[e.kind]||e.kind, color: e.kind==="approved"?"#3f6f3a":"#c6781e" }));
+    const hasAudit = auditLogView.length > 0;
+    const saveLabel = this.state.rulesSaved ? "Saved \u2713" : "Save profile";
+
+    return {
+      goQueue: this.goQueue,
+      loads: shown, allCount: loads.length, shownCount: shown.length,
+      filters,
+      totOverStr: this.fmt(totOver), totRecStr: this.fmt(totRec),
+      cleanN: clean, blockN: blocking, reviewN: review,
+      decidedStr: decidedN + " of " + loads.length + " decided",
+      trend, findingTypes, carriers,
+      ocrFields, ocrVerdict,
+      rules: this.state.rules, onRuleInput: this.onRuleInput,
+      detailView, selectedId: this.state.selectedId,
+      navItems, disp, chrome, account, regPlan, saveLabel, profileJson,
+      pipeline, mvpPct, shippingN, progressN, plannedN, adminTabs,
+      goStatus: () => this.setScreen("status"), goAdminHome: () => this.setScreen("admin"), goConfig: () => this.setScreen("config"),
+      externalsView, liveCount, externalsTotal: externalsView.length,
+      onExportIif: () => this.exportIif(), onExportTms: () => this.exportTmsJson(), onExportException: () => this.exportException(),
+      ocrSent: this.state.ocrSent, ocrConf, ocrLayout, onSendOcr: () => this.sendOcr(), onReRunOcr: () => this.reRunOcr(),
+      newDisallowed: this.state.newDisallowed, disallowedExtra: this.state.disallowedExtra, onNewDisallowedInput: this.onNewDisallowedInput, onAddDisallowed: () => this.addDisallowed(),
+      previewResult: this.state.previewResult, onPreviewBatch: () => this.previewBatch(),
+      auditLogView, hasAudit, noAudit: !hasAudit,
+      onExportCsv: () => this.exportCsv(), onSaveRules: () => this.saveRules(),
+      onRegInput: this.onRegInput,
+      goLanding: () => this.setScreen("landing"),
+      goPricing: () => this.setScreen("pricing"),
+      goRegister: () => this.setScreen("register"),
+      goSignin: () => this.setScreen("signin"),
+      onRegister: () => this.register(),
+      onSignIn: () => this.signIn(),
+      onEnterAdmin: () => this.enterAdmin(),
+      onSignOut: () => this.signOut(),
+      onPlanPilot: () => this.choosePlan("Pilot"),
+      onPlanGrowth: () => this.choosePlan("Growth"),
+      onPlanEnterprise: () => this.choosePlan("Enterprise")
+    };
+  }
+}
+</script>
+</body>
+</html>

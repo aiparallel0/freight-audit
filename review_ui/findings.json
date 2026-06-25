@@ -1,0 +1,429 @@
+[
+  {
+    "load_id": "L-100481",
+    "severity": "ok",
+    "net_money_impact_cents": 0,
+    "auto_approvable": true,
+    "findings": [
+      {
+        "type": "ok",
+        "severity": "ok",
+        "message": "Invoice matches agreement and evidence; safe to auto-approve.",
+        "money_impact_cents": 0
+      }
+    ],
+    "rate_con": {
+      "load_id": "L-100481",
+      "broker_name": "Cardinal Logistics Brokerage",
+      "carrier_name": "Sunbelt Carriers LLC",
+      "origin": "Dallas, TX",
+      "destination": "Memphis, TN",
+      "agreed_total_cents": 185000,
+      "free_time_hours": 2,
+      "line_items": [
+        {
+          "description": "Linehaul",
+          "amount_cents": 160000,
+          "category": "linehaul",
+          "quantity": null,
+          "rate_cents": null
+        },
+        {
+          "description": "Fuel Surcharge",
+          "amount_cents": 25000,
+          "category": "fuel",
+          "quantity": null,
+          "rate_cents": null
+        }
+      ],
+      "approved_accessorials": {
+        "detention": 7500
+      }
+    },
+    "invoice": {
+      "invoice_number": "SB-44021",
+      "load_id": "L-100481",
+      "carrier_name": "Sunbelt Carriers LLC",
+      "billed_total_cents": 185000,
+      "invoice_date": "2026-06-10",
+      "line_items": [
+        {
+          "description": "Line Haul",
+          "amount_cents": 160000,
+          "category": "linehaul",
+          "quantity": null,
+          "rate_cents": null
+        },
+        {
+          "description": "FSC",
+          "amount_cents": 25000,
+          "category": "fuel",
+          "quantity": null,
+          "rate_cents": null
+        }
+      ]
+    },
+    "pod": {
+      "load_id": "L-100481",
+      "delivered": true,
+      "arrival_time": "2026-06-09 08:00",
+      "departure_time": "2026-06-09 09:30",
+      "signed_by": "R. Alvarez",
+      "time_on_site_hours": 1.5
+    }
+  },
+  {
+    "load_id": "L-100482",
+    "severity": "warn",
+    "net_money_impact_cents": 110000,
+    "auto_approvable": false,
+    "findings": [
+      {
+        "type": "total_mismatch",
+        "severity": "warn",
+        "message": "Invoice total $2,500.00 exceeds agreed $2,100.00 by $400.00.",
+        "money_impact_cents": 40000
+      },
+      {
+        "type": "line_overcharge",
+        "severity": "warn",
+        "message": "Linehaul billed $1,900.00 vs agreed $1,800.00 (+$100.00).",
+        "money_impact_cents": 10000
+      },
+      {
+        "type": "line_overcharge",
+        "severity": "warn",
+        "message": "Fuel billed $600.00 vs agreed $300.00 (+$300.00).",
+        "money_impact_cents": 30000
+      },
+      {
+        "type": "duplicate_line",
+        "severity": "warn",
+        "message": "'fuel' charge of $300.00 appears 2x -- 1 likely duplicate(s).",
+        "money_impact_cents": 30000
+      }
+    ],
+    "rate_con": {
+      "load_id": "L-100482",
+      "broker_name": "Cardinal Logistics Brokerage",
+      "carrier_name": "Ironwood Freight Inc",
+      "origin": "Atlanta, GA",
+      "destination": "Tampa, FL",
+      "agreed_total_cents": 210000,
+      "free_time_hours": 2,
+      "line_items": [
+        {
+          "description": "Linehaul",
+          "amount_cents": 180000,
+          "category": "linehaul",
+          "quantity": null,
+          "rate_cents": null
+        },
+        {
+          "description": "Fuel Surcharge",
+          "amount_cents": 30000,
+          "category": "fuel",
+          "quantity": null,
+          "rate_cents": null
+        }
+      ],
+      "approved_accessorials": {}
+    },
+    "invoice": {
+      "invoice_number": "IW-7781",
+      "load_id": "100482",
+      "carrier_name": "Ironwood Freight Inc",
+      "billed_total_cents": 250000,
+      "invoice_date": "2026-06-11",
+      "line_items": [
+        {
+          "description": "Linehaul",
+          "amount_cents": 190000,
+          "category": "linehaul",
+          "quantity": null,
+          "rate_cents": null
+        },
+        {
+          "description": "Fuel Surcharge",
+          "amount_cents": 30000,
+          "category": "fuel",
+          "quantity": null,
+          "rate_cents": null
+        },
+        {
+          "description": "Fuel Surcharge",
+          "amount_cents": 30000,
+          "category": "fuel",
+          "quantity": null,
+          "rate_cents": null
+        }
+      ]
+    },
+    "pod": {
+      "load_id": "L-100482",
+      "delivered": true,
+      "arrival_time": "2026-06-10 13:00",
+      "departure_time": "2026-06-10 14:15",
+      "signed_by": "T. Nguyen",
+      "time_on_site_hours": 1.25
+    }
+  },
+  {
+    "load_id": "L-100483",
+    "severity": "warn",
+    "net_money_impact_cents": 25000,
+    "auto_approvable": false,
+    "findings": [
+      {
+        "type": "total_mismatch",
+        "severity": "warn",
+        "message": "Invoice total $1,525.00 exceeds agreed $1,400.00 by $125.00.",
+        "money_impact_cents": 12500
+      },
+      {
+        "type": "unauthorized_accessorial",
+        "severity": "warn",
+        "message": "Unauthorized accessorial 'Liftgate Service' (liftgate) billed $125.00 -- not on rate con or pre-approved.",
+        "money_impact_cents": 12500
+      }
+    ],
+    "rate_con": {
+      "load_id": "L-100483",
+      "broker_name": "Cardinal Logistics Brokerage",
+      "carrier_name": "Blue Ridge Transport",
+      "origin": "Charlotte, NC",
+      "destination": "Nashville, TN",
+      "agreed_total_cents": 140000,
+      "free_time_hours": 2,
+      "line_items": [
+        {
+          "description": "Linehaul",
+          "amount_cents": 115000,
+          "category": "linehaul",
+          "quantity": null,
+          "rate_cents": null
+        },
+        {
+          "description": "Fuel Surcharge",
+          "amount_cents": 25000,
+          "category": "fuel",
+          "quantity": null,
+          "rate_cents": null
+        }
+      ],
+      "approved_accessorials": {
+        "detention": 6000
+      }
+    },
+    "invoice": {
+      "invoice_number": "BR-3390",
+      "load_id": "L-100483",
+      "carrier_name": "Blue Ridge Transport",
+      "billed_total_cents": 152500,
+      "invoice_date": "2026-06-12",
+      "line_items": [
+        {
+          "description": "Linehaul",
+          "amount_cents": 115000,
+          "category": "linehaul",
+          "quantity": null,
+          "rate_cents": null
+        },
+        {
+          "description": "Fuel Surcharge",
+          "amount_cents": 25000,
+          "category": "fuel",
+          "quantity": null,
+          "rate_cents": null
+        },
+        {
+          "description": "Liftgate Service",
+          "amount_cents": 12500,
+          "category": "liftgate",
+          "quantity": null,
+          "rate_cents": null
+        }
+      ]
+    },
+    "pod": {
+      "load_id": "L-100483",
+      "delivered": true,
+      "arrival_time": "2026-06-11 10:00",
+      "departure_time": "2026-06-11 11:30",
+      "signed_by": "M. Carter",
+      "time_on_site_hours": 1.5
+    }
+  },
+  {
+    "load_id": "L-100484",
+    "severity": "block",
+    "net_money_impact_cents": 37500,
+    "auto_approvable": false,
+    "findings": [
+      {
+        "type": "total_mismatch",
+        "severity": "warn",
+        "message": "Invoice total $1,475.00 exceeds agreed $1,250.00 by $225.00.",
+        "money_impact_cents": 22500
+      },
+      {
+        "type": "accessorial_over_cap",
+        "severity": "warn",
+        "message": "Detention billed $225.00 exceeds approved cap $75.00 (+$150.00).",
+        "money_impact_cents": 15000
+      },
+      {
+        "type": "detention_unsupported",
+        "severity": "block",
+        "message": "Detention of $225.00 billed but POD has no usable arrival/departure timestamps to substantiate it -- deniable as-is.",
+        "money_impact_cents": 0
+      }
+    ],
+    "rate_con": {
+      "load_id": "L-100484",
+      "broker_name": "Cardinal Logistics Brokerage",
+      "carrier_name": "Sunbelt Carriers LLC",
+      "origin": "Houston, TX",
+      "destination": "New Orleans, LA",
+      "agreed_total_cents": 125000,
+      "free_time_hours": 2,
+      "line_items": [
+        {
+          "description": "Linehaul",
+          "amount_cents": 105000,
+          "category": "linehaul",
+          "quantity": null,
+          "rate_cents": null
+        },
+        {
+          "description": "Fuel Surcharge",
+          "amount_cents": 20000,
+          "category": "fuel",
+          "quantity": null,
+          "rate_cents": null
+        }
+      ],
+      "approved_accessorials": {
+        "detention": 7500
+      }
+    },
+    "invoice": {
+      "invoice_number": "SB-44090",
+      "load_id": "L-100484",
+      "carrier_name": "Sunbelt Carriers LLC",
+      "billed_total_cents": 147500,
+      "invoice_date": "2026-06-13",
+      "line_items": [
+        {
+          "description": "Linehaul",
+          "amount_cents": 105000,
+          "category": "linehaul",
+          "quantity": null,
+          "rate_cents": null
+        },
+        {
+          "description": "Fuel Surcharge",
+          "amount_cents": 20000,
+          "category": "fuel",
+          "quantity": null,
+          "rate_cents": null
+        },
+        {
+          "description": "Detention (3 hrs)",
+          "amount_cents": 22500,
+          "category": "detention",
+          "quantity": 3,
+          "rate_cents": 7500
+        }
+      ]
+    },
+    "pod": {
+      "load_id": "L-100484",
+      "delivered": true,
+      "arrival_time": null,
+      "departure_time": null,
+      "signed_by": "J. Pierre",
+      "time_on_site_hours": null
+    }
+  },
+  {
+    "load_id": "L-100485",
+    "severity": "warn",
+    "net_money_impact_cents": -18000,
+    "auto_approvable": false,
+    "findings": [
+      {
+        "type": "detention_underbilled",
+        "severity": "warn",
+        "message": "POD shows 4.25h on site (2.25h past free time) but NO detention billed. Carrier is owed ~$180.00 @ $80.00/hr -- recoverable revenue.",
+        "money_impact_cents": -18000
+      }
+    ],
+    "rate_con": {
+      "load_id": "L-100485",
+      "broker_name": "Cardinal Logistics Brokerage",
+      "carrier_name": "Ironwood Freight Inc",
+      "origin": "Phoenix, AZ",
+      "destination": "El Paso, TX",
+      "agreed_total_cents": 170000,
+      "free_time_hours": 2,
+      "line_items": [
+        {
+          "description": "Linehaul",
+          "amount_cents": 145000,
+          "category": "linehaul",
+          "quantity": null,
+          "rate_cents": null
+        },
+        {
+          "description": "Fuel Surcharge",
+          "amount_cents": 25000,
+          "category": "fuel",
+          "quantity": null,
+          "rate_cents": null
+        },
+        {
+          "description": "Detention",
+          "amount_cents": 0,
+          "category": "detention",
+          "quantity": null,
+          "rate_cents": 8000
+        }
+      ],
+      "approved_accessorials": {
+        "detention": 8000
+      }
+    },
+    "invoice": {
+      "invoice_number": "IW-7820",
+      "load_id": "L-100485",
+      "carrier_name": "Ironwood Freight Inc",
+      "billed_total_cents": 170000,
+      "invoice_date": "2026-06-14",
+      "line_items": [
+        {
+          "description": "Linehaul",
+          "amount_cents": 145000,
+          "category": "linehaul",
+          "quantity": null,
+          "rate_cents": null
+        },
+        {
+          "description": "Fuel Surcharge",
+          "amount_cents": 25000,
+          "category": "fuel",
+          "quantity": null,
+          "rate_cents": null
+        }
+      ]
+    },
+    "pod": {
+      "load_id": "L-100485",
+      "delivered": true,
+      "arrival_time": "2026-06-13 06:00",
+      "departure_time": "2026-06-13 10:15",
+      "signed_by": "D. Salazar",
+      "time_on_site_hours": 4.25
+    }
+  }
+]

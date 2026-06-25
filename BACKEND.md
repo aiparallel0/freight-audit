@@ -1,315 +1,101 @@
-# BACKEND.md
+# Backend services — preparation handoff
 
-Hands-on guide to the **freight-audit backend** — the FastAPI service, its data and
-auth layers, and how to run, extend, operate, and deploy it. For the business
-overview and full architecture see [`docs/REPORT.md`](docs/REPORT.md).
+The front-end (`Freight Audit Web Pages.dc.html` + `deploy.config.js`) is finished and
+contract-frozen. Each external is a variable that, when set, makes the app call a real
+service. This doc is how to **build those services** so that filling `deploy.config.js`
+actually works. Build to these contracts and the front-end needs zero changes.
 
-The backend is a single FastAPI app: **`freight_audit.api:app`**
-(`uvicorn freight_audit.api:app`). It is multi-tenant, key-authenticated, persists
-to SQLite or Postgres, meters usage for billing, and exposes Prometheus metrics.
-
----
-
-## Contents
-- [Quickstart](#quickstart)
-- [Request lifecycle](#request-lifecycle)
-- [Modules (backend-relevant)](#modules-backend-relevant)
-- [Data & storage](#data--storage)
-- [Auth & multi-tenancy](#auth--multi-tenancy)
-- [Endpoints](#endpoints)
-- [Billing & metering](#billing--metering)
-- [Monitoring & alerting](#monitoring--alerting)
-- [Secrets & configuration](#secrets--configuration)
-- [Extending the backend](#extending-the-backend)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Operational runbook](#operational-runbook)
-- [Security checklist](#security-checklist)
+Reuse what already exists in the `freight-audit` repo — do not rewrite the engine:
+`match.py` (rules), `models.py` (`process_load`, money cents), `normalize.py`,
+`profiles.py`, `exporters.py`, `store.py`, `security.py`, `extract.py` (provider seam).
 
 ---
 
-## Quickstart
+## 0. The frozen contract (what the front-end calls)
 
-```bash
-# 1. install the backend extras (+ the system `tesseract` binary for OCR uploads)
-pip install -e ".[api,ocr,synth,postgres,dev]"
-
-# 2. run it
-FREIGHT_AUDIT_KEYS=./keys.json FREIGHT_AUDIT_DB=./freight_audit.db \
-  uvicorn freight_audit.api:app --reload
-#  -> http://127.0.0.1:8000   (Swagger UI at /docs)
-
-# 3. create a tenant + key, then call an endpoint
-curl -s -XPOST localhost:8000/signup -H 'Content-Type: application/json' \
-  -d '{"email":"ops@acme.co"}'                       # -> {tenant, api_key, role:"admin"}
-KEY=...                                              # paste the api_key
-curl -s -XPOST localhost:8000/audit -H "X-API-Key: $KEY" -H 'Content-Type: application/json' \
-  -d @samples/loads/load_002_overcharge_duplicate.json   # the bundle's rate_confirmation/invoice/pod
-```
-
-Run the backend test slice:
-```bash
-python -m pytest tests/test_api.py tests/test_auth.py tests/test_signup.py \
-  tests/test_billing.py tests/test_billing_stripe.py tests/test_monitoring.py \
-  tests/test_store.py tests/test_multitenant.py tests/test_web.py -q
-```
-
----
-
-## Request lifecycle
-
-For every HTTP request:
-
-1. **Metrics middleware** (`api._metrics_middleware`) starts a timer.
-2. The route's **auth dependency** runs (`auditor` / `reviewer` / `admin_only` /
-   `require_tenant`), which calls `_authenticate(x_api_key)`:
-   - `KeyStore.tenant_for(key)` → tenant, or **401** if missing/invalid/expired/revoked;
-   - `RateLimiter.allow(key)` → **429** if over the per-key limit;
-   - role check → **403** if the key's role isn't permitted.
-3. The handler runs, scoped to the tenant; persistence goes through
-   `_store()` = `storage.get_store()`.
-4. The middleware records `(tenant, path, latency_ms, status)` into `METRICS`.
-
-Stores and key stores are created **per request** from config (cheap; SQLite opens a
-file, Postgres a pooled connection) so the process holds no shared mutable state
-beyond the in-memory rate limiter and metrics counters.
-
----
-
-## Modules (backend-relevant)
-
-| Module | Responsibility |
-|---|---|
-| `api.py` | FastAPI app, routes, auth dependencies, metrics middleware |
-| `web/pages.py` | Browser pages + `/demo/audit`, `/review` (imported by `api` to register on `app`) |
-| `security.py` | `KeyStore`: hashed keys, tenants, roles, expiry, rotation, `create_account` |
-| `ratelimit.py` | `InMemoryRateLimiter` (per-key fixed window) |
-| `store.py` | `Store`: SQLite persistence + audit log (tenant-scoped) + migrations |
-| `storage.py` | `get_store()` factory + `PostgresStore` (psycopg) |
-| `billing.py` | metering rollup → `Pricing` → `charge()` (Stripe/generic) + `charge_tenant()` |
-| `metrics.py` | in-process counters → Prometheus text |
-| `notify.py` | alert evaluation + email/Slack/webhook dispatch |
-| `secret_provider.py` | `get_secret()` (env/file/chain) — all credentials |
-| `pipeline.py` | `audit_documents()` — OCR images → engine (used by `/audit/upload`) |
-| `__init__.py` | `process_load()` — bundle dicts → engine (used by `/audit`) |
-
----
-
-## Data & storage
-
-`storage.get_store()` returns the backend chosen by config:
-
-- **SQLite** (default): `Store(FREIGHT_AUDIT_DB)` — single file, zero-config.
-- **Postgres**: when `DATABASE_URL` is a `postgres(ql)://…` URL → `PostgresStore`.
-
-Both expose the **same surface**, so handlers are backend-agnostic:
+The app's `loadEngine()` / seams expect these. Match them exactly.
 
 ```
-save_result(result, client, actor, tenant_id)   get_load(load_id, tenant_id)
-all_loads(tenant_id)                             record_decision(load_id, decision, actor, note, tenant_id)
-decisions_for(load_id, tenant_id)                record_usage(tenant_id, load_id, overpay_cents, recoverable_cents)
-usage_rows(tenant_id)                            audit(...) / audit_trail(load_id, tenant_id)
-summary(tenant_id)                               report(tenant_id)
+GET  /findings                  -> MatchResult[]   (the audit queue)
+POST /decisions                 {id, kind, at}     (approve/flag, append-only)
+POST /export/quickbooks                            (push bills via QBO)
+POST /ocr/confirm               {fields...}        (confirmed OCR -> audit)
+POST /checkout                  {plan}             (Stripe session)
+   + the client's own TMS endpoint (TMS_API_URL) receives the tms.json payload
 ```
 
-Tables: `loads` (PK `(tenant_id, load_id)`), `decisions`, `audit_log`, `usage` — all
-carry `tenant_id`. **Migrations** run on open: `Store._migrate()` upgrades a legacy
-single-tenant SQLite schema in place (recreates `loads` with the composite key, adds
-`tenant_id` columns); `PostgresStore` uses `CREATE TABLE IF NOT EXISTS`.
+`MatchResult` JSON (already produced by the in-browser port in `findings.json` — keep identical):
 
-> **Money is integer cents** in every column (`net_impact_cents`, `overpay_cents`, …).
-
----
-
-## Auth & multi-tenancy
-
-`security.KeyStore` (JSON file at `FREIGHT_AUDIT_KEYS`) stores **hashed** keys; the
-raw key is shown once. Each key record has `tenant_id`, `role`
-(`admin`/`reviewer`/`api`), optional `expires_at`, and `email`.
-
-- `issue(label, tenant_id, role, ttl_days, email)` → key
-- `verify(key)` / `tenant_for(key)` / `role_for(key)` — honor active + expiry
-- `rotate(key)` → new key (same tenant/role), revokes the old
-- `create_account(email)` → `{tenant, api_key, role:"admin"}` (raises `InvalidEmail`
-  / `DuplicateAccount`)
-
-**Roles on endpoints** (`api._role_dep`): `auditor` = api|admin, `reviewer` =
-reviewer|admin, `admin_only` = admin. **Rate limit**: per key, `RATE_LIMIT_PER_MIN`
-(default 60) → **429**. **Tenant isolation**: every read/write is scoped by the key's
-tenant — a key can never see another tenant's data (proved in `test_multitenant.py`).
-
----
-
-## Endpoints
-
-| Method · Path | Role | Notes |
-|---|---|---|
-| `POST /signup` | open | `{email}` → tenant + admin key; 400 invalid, 409 duplicate |
-| `POST /audit` | api | bundle JSON → findings + severity; persisted + metered |
-| `POST /audit/upload` | api | image files → OCR pipeline → audit |
-| `GET /loads/{id}` | api | persisted load (tenant-scoped) |
-| `GET /usage` | api | metered usage → bill (`billing.bill_tenant`) |
-| `GET /review` · `POST /review/{id}` | reviewer | queue; accept/correct/reject → `record_decision` |
-| `POST /keys` | admin | issue an extra key |
-| `POST /keys/rotate` | any valid | rotate calling key |
-| `POST /billing/webhook` | Stripe sig | verified payment events; 400 bad signature |
-| `GET /metrics` | open | Prometheus text |
-| `GET /healthz` | open | `{status, db, version}` |
-| `GET /` `/signup` `/demo` `/app/review` `/docs` | open | pages + Swagger UI |
-| `POST /demo/audit` | trial | no key; trial-limited → 429 |
-
----
-
-## Billing & metering
-
-On each `/audit` and `/audit/upload`, `api._record()` calls
-`store.record_usage(tenant, load_id, overpay_cents, recoverable_cents)`.
-
-```python
-from freight_audit.billing import bill_tenant, charge_tenant, Pricing
-bill = bill_tenant(store, tenant)          # {audits, value_cents, billing_cents, ...}
-#  billing_cents = base_fee_cents·audits + ⌊pct_savings · value_cents⌋   (integer cents)
-charge_tenant(store, tenant)               # meter -> price -> charge() (Stripe if configured)
+```json
+{
+  "load_id": "L-100482",
+  "severity": "warn",
+  "net_money_impact_cents": 110000,
+  "auto_approvable": false,
+  "findings": [{"type":"line_overcharge","severity":"warn","message":"…","money_impact_cents":18000}],
+  "rate_con": { … }, "invoice": { … }, "pod": { … }
+}
 ```
 
-`charge()` uses the **Stripe SDK** (PaymentIntent) when `STRIPE_API_KEY` is set, else
-POSTs to a generic endpoint (`FREIGHT_AUDIT_BILLING_URL`). `POST /billing/webhook`
-verifies events with `STRIPE_WEBHOOK_SECRET`. Pricing knobs:
-`FREIGHT_AUDIT_BILL_BASE_CENTS`, `FREIGHT_AUDIT_BILL_PCT`.
+Money is **integer cents** everywhere (never floats) — use `to_cents` / `cents_to_str`.
 
 ---
 
-## Monitoring & alerting
+## 1. Audit API  (variable: `API_BASE_URL`)  — build first
 
-- **`GET /metrics`** → `freight_audit_requests_total`, `_errors_total`,
-  `_request_latency_ms_avg`, labelled by `tenant` and `path`.
-- **Logging** — `logging.getLogger("freight_audit.api")` logs each audit and webhook.
-- **Alerts** — rules in `config/alerts.json`; `notify.evaluate_rules(snapshot, rules)`
-  fires alerts; `notify.Notifier(transport).dispatch(alert)` sends via
-  `NOTIFY_TRANSPORT` (`slack`/`webhook`/`email`, else a `FakeTransport`). SLA in
-  [`docs/SLA.md`](docs/SLA.md).
+Wrap the existing engine in HTTP. Nothing about the rules changes.
 
-To wire alerting to a metrics scrape loop, evaluate `METRICS.snapshot()` against
-`load_alert_rules()` on a schedule and dispatch the result.
+- Stack: **FastAPI + uvicorn**, pydantic models mirroring `models.py`.
+- `GET /findings`: load each bundle, call `process_load(rc, inv, pod, profile)`, serialize
+  the `MatchResult` to the JSON above (add a `to_dict()` on the dataclass).
+- `POST /loads`: accept a load bundle, run the engine, persist, return its `MatchResult`.
+- CORS: allow the front-end origin. Serve over HTTPS.
+- Exit gate: the site with `API_BASE_URL` set renders the **same** results it shows offline.
 
----
+## 2. Persistence  (variable: `DATABASE_URL`)
 
-## Secrets & configuration
+- Promote `store.py` from the SQLite scaffold to a real schema:
+  `loads`, `findings`, `decisions`, `audit_log` (append-only).
+- Add migrations (Alembic). Point at managed Postgres.
+- `POST /decisions` writes the decision + an `audit_log` row; `GET /findings` reads persisted state.
+- Exit gate: a decision survives a different browser/session.
 
-Read **only** through `secret_provider.get_secret(name, default)` (env by default;
-`FileSecretProvider` / `ChainSecretProvider` available; swap with `set_provider()`).
-Backend env checklist:
+## 3. Auth + payments  (variables: `AUTH_MODE`, `STRIPE_KEY`, `EMAIL_API_KEY`)
 
-```
-FREIGHT_AUDIT_KEYS, FREIGHT_AUDIT_DB        # key store + sqlite paths
-DATABASE_URL                                 # -> Postgres backend
-RATE_LIMIT_PER_MIN, DEMO_TRIAL_LIMIT         # limits
-STRIPE_API_KEY, STRIPE_WEBHOOK_SECRET        # billing
-FREIGHT_AUDIT_BILL_BASE_CENTS, _BILL_PCT     # pricing
-NOTIFY_TRANSPORT, SLACK_WEBHOOK_URL, SMTP_*  # alerting
-AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION   # Textract (uploads)
-```
+- Start from `security.py`'s API-key gate; add sessions/JWT (or integrate Clerk/Auth0).
+  Protect every endpoint above.
+- `POST /checkout`: create a Stripe Checkout session; handle the webhook to mark the
+  account paid. Configure products/prices in Stripe first.
+- Wire the email provider for invites/resets.
+- Exit gate: a stranger cannot read `/findings`.
 
----
+## 4. Exporters as endpoints  (variables: `QBO_CLIENT_ID`, `TMS_API_URL`)
 
-## Extending the backend
+- The formats already exist in `exporters.py` (IIF, TMS JSON, exception CSV). Wrap them:
+  - `POST /export/quickbooks`: run the IIF exporter, then push via a real **QuickBooks OAuth**
+    flow (consent → token exchange → refresh). A client id alone is not enough.
+  - TMS: map the `tms_json` payload to the client's API and POST to `TMS_API_URL`.
+- Exit gate: an approved batch appears in QuickBooks / the TMS.
 
-**Add an endpoint** — decorate on `app` in `api.py` (or a module imported by it),
-using an auth dependency:
-```python
-@app.get("/loads")
-def list_loads(tenant: str = Depends(auditor)):
-    return {"loads": _store().all_loads(tenant)}
-```
+## 5. Real OCR  (variables: `OCR_PROVIDER`, `OCR_API_KEY`, `UPLOADS_BUCKET`)
 
-**Add an extraction provider** — subclass `ExtractionProvider` in `extract.py` and
-register it:
-```python
-class MyProvider(ExtractionProvider):
-    def extract_invoice(self, source): ...
-PROVIDERS["mine"] = MyProvider
-```
+- Implement one `ExtractionProvider` in `extract.py` (Veryfi or Textract) behind the seam —
+  the parser, validator, and tests do not change.
+- Upload endpoint stores the image in object storage, runs the provider, returns fields +
+  document confidence; `POST /ocr/confirm` persists corrections and triggers the audit.
+- Exit gate: a photographed invoice audits end-to-end above the client's accuracy bar.
 
-**Add an exporter** — add a `fn(results)->str` and register it:
-```python
-EXPORTERS["my_format"] = my_export; EXPORTER_EXT["my_format"] = ".txt"
-```
+## 6. Scale  (variables: `QUEUE_URL`, `SSO_METADATA_URL`, `MONITORING_DSN`)
 
-**Add a storage backend** — implement the `Store` method surface (see
-[Data & storage](#data--storage)) and branch in `storage.get_store()`.
-
-**Onboard a TMS write-back** — supply a `SchemaMapping` field map
-(`tms_writeback.SchemaMapping`) — config, not code.
-
-**Tune OCR for a client** — drop `config/layouts/<tenant>.json` (a `LayoutProfile`);
-`client_layouts.load_client_layout(tenant)` picks it up.
+Only once there are paying customers: a job queue for batch processing, enterprise SSO,
+error monitoring, multi-tenant data isolation. Do not pull forward.
 
 ---
 
-## Testing
+## Cross-cutting prep
 
-```bash
-python -m pytest -q                                   # full suite (SQLite) — 126 pass
-DATABASE_URL=postgresql://fa:fa@localhost:5432/fa_test \
-  python -m pytest tests/test_storage_postgres.py -q  # Postgres backend — 3 pass
-```
-
-Backend tests mock external systems (`stripe`, `urllib.request.urlopen`, the IdP) —
-no live calls. FastAPI is exercised via `TestClient` (no running server). Each test
-isolates state with a temp `FREIGHT_AUDIT_KEYS`/`FREIGHT_AUDIT_DB` and a fresh
-`api._limiter`.
-
----
-
-## Deployment
-
-- **Docker** — `Dockerfile` installs `.[ocr,textract,synth,api,postgres]` + tesseract
-  and runs `uvicorn freight_audit.api:app --host 0.0.0.0 --port 8000`; persists
-  `/data`. Build/run:
-  ```bash
-  docker build -t freight-audit . && docker run -p 8000:8000 \
-    -e DATABASE_URL=postgresql://... -e STRIPE_API_KEY=sk_... freight-audit
-  ```
-- **CI** — `.github/workflows/ci.yml`: a SQLite job runs the full suite; a Postgres
-  job spins a `postgres:16` service, sets `DATABASE_URL`, and runs the storage tests.
-- **Production switches** — set `DATABASE_URL` (managed Postgres), point the secret
-  provider at the host's secret manager, set `STRIPE_API_KEY`, `NOTIFY_TRANSPORT`,
-  and a real `RATE_LIMIT_PER_MIN`. Put a reverse proxy / TLS in front of uvicorn.
-
-> Note: in restricted networks `docker build` may be blocked from pulling the base
-> image; GitHub-hosted runners and normal hosts can pull it.
-
----
-
-## Operational runbook
-
-- **Health** — `GET /healthz` (checks DB connectivity + version); use it as the
-  load-balancer probe and the `high_error_rate` alert source.
-- **Metrics** — scrape `GET /metrics`; watch per-tenant `errors_total` and
-  `latency_ms_avg` (SLO: avg `/audit` ≤ 1000 ms).
-- **Scaling** — the app is stateless except the in-memory rate limiter and metrics;
-  to run multiple replicas, move those to a shared backend (Redis) — the
-  `RateLimiter` protocol exists for exactly that swap — and use Postgres (not SQLite).
-- **Backups** — back up the Postgres database and the `FREIGHT_AUDIT_KEYS` store;
-  the `audit_log` table is the append-only "who approved what, when" record.
-- **Data retention** — set a retention policy per the DPA; loads/decisions/usage are
-  tenant-scoped for per-customer export/delete.
-
----
-
-## Security checklist
-
-- [x] API keys stored **hashed** (sha256); raw key shown once.
-- [x] Per-key **roles**, **expiry**, **rotation**; revoked/expired → 401.
-- [x] Per-key **rate limiting** → 429.
-- [x] **Tenant isolation** on every read/write (composite-key storage).
-- [x] Credentials read via `secret_provider` only — **never hardcoded**.
-- [x] Stripe webhook **signature verified**.
-- [ ] **TLS** termination (reverse proxy / host) — deployment concern.
-- [ ] **SSO** for enterprise (`sso.py` seam built; needs a real IdP).
-- [ ] **SOC 2** / formal pen-test — when a customer requires it.
-
----
-
-*See also: [`docs/REPORT.md`](docs/REPORT.md) (business + full architecture),
-[`docs/SLA.md`](docs/SLA.md), [`docs/STATUS.md`](docs/STATUS.md).*
+- **Containerize** (Dockerfile) and deploy to Render / Fly / a VM; one service, then split if needed.
+- The API reads its **own** env config (same variable names) for `DATABASE_URL`, OCR keys, Stripe, etc.
+- Keep the repo's **37 tests** green; add API + integration tests.
+- Build order: **1 → 2 → 3**, then **4 and 5** in parallel, then **6**.
+- Golden rule: never change the contract in section 0. The front-end is done; the server conforms to it.
